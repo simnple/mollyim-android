@@ -1409,7 +1409,8 @@ object DataMessageProcessor {
     }
 
     return if (MessageConstraintsUtil.isValidAdminDeleteReceive(targetMessage, senderRecipient, envelope.serverTimestamp!!, groupRecord)) {
-      SignalDatabase.messages.markAsRemoteDelete(targetMessage, senderRecipient.id)
+      // Custom fork: keep the group-admin-deleted message's body visible.
+      SignalDatabase.messages.markAsRemoteDeleteRetainingContent(targetMessage, senderRecipient.id)
       AppDependencies.messageNotifier.updateNotification(context, ConversationId.fromMessageRecord(targetMessage))
       MessageId(targetMessage.id)
     } else {
