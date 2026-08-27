@@ -229,6 +229,8 @@ internal object ConversationOptionsMenu {
         R.id.menu_conversation_settings -> callback.handleConversationSettings()
         R.id.menu_expiring_messages_off, R.id.menu_expiring_messages -> callback.handleSelectMessageExpiration()
         R.id.menu_export -> callback.handleExportChat()
+        R.id.menu_spam -> callback.handleSpam()
+        R.id.menu_delete_all_my_messages -> callback.handleDeleteAllMyMessages()
         R.id.menu_create_bubble -> callback.handleCreateBubble()
         androidx.appcompat.R.id.home -> callback.handleGoHome()
         R.id.menu_block -> callback.handleBlock()
@@ -309,5 +311,7 @@ internal object ConversationOptionsMenu {
     fun handleMessageRequestAccept()
     fun handleDeleteConversation()
     fun handleExportChat()
+    fun handleSpam()
+    fun handleDeleteAllMyMessages()
   }
 }

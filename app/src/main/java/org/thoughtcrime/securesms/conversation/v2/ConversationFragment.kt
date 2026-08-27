@@ -31,6 +31,7 @@ import android.provider.Browser
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.Menu
@@ -42,8 +43,10 @@ import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
@@ -129,6 +132,7 @@ import org.signal.core.util.ThreadUtil
 import org.signal.core.util.concurrent.LifecycleDisposable
 import org.signal.core.util.concurrent.ListenableFuture
 import org.signal.core.util.concurrent.addTo
+import org.signal.core.util.concurrent.SignalExecutors
 import org.signal.core.util.dp
 import org.signal.core.util.logging.Log
 import org.signal.core.util.orNull
@@ -244,6 +248,8 @@ import org.thoughtcrime.securesms.conversation.v2.items.ChatColorsDrawable
 import org.thoughtcrime.securesms.conversation.v2.items.InteractiveConversationElement
 import org.thoughtcrime.securesms.conversation.v2.keyboard.AttachmentKeyboardFragment
 import org.thoughtcrime.securesms.database.DraftTable
+import org.thoughtcrime.securesms.database.MessageTable
+import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.model.IdentityRecord
 import org.thoughtcrime.securesms.database.model.InMemoryMessageRecord
 import org.thoughtcrime.securesms.database.model.Mention
@@ -4389,6 +4395,93 @@ class ConversationFragment :
         }
         .setNegativeButton(android.R.string.cancel, null)
         .show()
+    }
+
+    override fun handleSpam() {
+      if (viewModel.recipientSnapshot == null) {
+        return
+      }
+
+      val density = resources.displayMetrics.density
+      val countInput = EditText(requireContext()).apply {
+        isSingleLine = true
+        inputType = InputType.TYPE_CLASS_NUMBER
+        hint = getString(R.string.SpamDialog__count_hint)
+      }
+      val bodyInput = EditText(requireContext()).apply {
+        isSingleLine = true
+        hint = getString(R.string.SpamDialog__message_hint)
+      }
+      val container = LinearLayout(requireContext()).apply {
+        orientation = LinearLayout.VERTICAL
+        val pad = (16 * density).toInt()
+        setPadding(pad, 0, pad, 0)
+        addView(countInput)
+        addView(bodyInput)
+      }
+
+      MaterialAlertDialogBuilder(requireContext())
+        .setTitle(R.string.SpamDialog__title)
+        .setView(container)
+        .setPositiveButton(R.string.SpamDialog__send) { _, _ ->
+          val count = countInput.text.toString().toIntOrNull()
+          if (count == null || count < 1 || count > 200) {
+            toast(R.string.SpamDialog__invalid_count)
+            return@setPositiveButton
+          }
+          val message = bodyInput.text.toString()
+          repeat(count) {
+            sendMessage(body = message, clearCompose = false)
+          }
+        }
+        .setNegativeButton(R.string.SpamDialog__cancel, null)
+        .show()
+    }
+
+    override fun handleDeleteAllMyMessages() {
+      val threadId = args.threadId
+
+      val dispose = SignalExecutors.BOUNDED.submit {
+        val myMessages = mutableSetOf<MessageRecord>()
+        MessageTable.mmsReaderFor(SignalDatabase.messages.getConversation(threadId)).use { reader ->
+          var record = reader.getNext()
+          while (record != null) {
+            if (record.isOutgoing) {
+              myMessages.add(record)
+            }
+            record = reader.getNext()
+          }
+        }
+
+        if (activity == null || isDetached) {
+          return@submit
+        }
+
+        requireActivity().runOnUiThread {
+          if (isDetached) {
+            return@runOnUiThread
+          }
+          if (myMessages.isEmpty()) {
+            toast(R.string.DeleteAllMyMessages__title)
+            return@runOnUiThread
+          }
+          DeleteDialog.show(
+            context = requireContext(),
+            messageRecords = myMessages,
+            title = getString(R.string.DeleteAllMyMessages__title),
+            message = getString(R.string.DeleteAllMyMessages__body)
+          ).observeOn(AndroidSchedulers.mainThread())
+            .subscribe()
+            .addTo(disposables)
+        }
+      }
+      disposables.add(object : Disposable {
+        override fun dispose() {
+          dispose.cancel(true)
+        }
+
+        override fun isDisposed(): Boolean = dispose.isCancelled
+      })
     }
   }
 

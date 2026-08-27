@@ -9764,5 +9764,17 @@
     <!-- Button declining to paste the recovery key -->
     <string name="RecoveryKeyWarningDialog__dont_share">복구 키 공유하지 않기</string>
 
+    <!-- Custom fork: spam (mass send) -->
+    <string name="conversation__menu_spam">도배 (대량 전송)</string>
+    <string name="SpamDialog__title">대량 전송</string>
+    <string name="SpamDialog__count_hint">몇 개?</string>
+    <string name="SpamDialog__message_hint">메시지</string>
+    <string name="SpamDialog__send">보내기</string>
+    <string name="SpamDialog__cancel">취소</string>
+    <string name="SpamDialog__invalid_count">유효한 개수를 입력하세요.</string>
+    <string name="conversation__menu_delete_all_my_messages">내 메시지 모두 삭제</string>
+    <string name="DeleteAllMyMessages__title">내 메시지 모두 삭제</string>
+    <string name="DeleteAllMyMessages__body">이 대화에서 내가 보낸 모든 메시지를 모두에게서 삭제합니다. 되돌릴 수 없습니다.</string>
+
     <!-- EOF -->
 </resources>

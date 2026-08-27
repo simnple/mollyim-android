@@ -9973,5 +9973,17 @@
     <!-- Button declining to paste the recovery key -->
     <string name="RecoveryKeyWarningDialog__dont_share">Don\'t share</string>
 
+    <!-- Custom fork: spam (mass send) -->
+    <string name="conversation__menu_spam">Spam (mass send)</string>
+    <string name="SpamDialog__title">Mass send</string>
+    <string name="SpamDialog__count_hint">How many?</string>
+    <string name="SpamDialog__message_hint">Message</string>
+    <string name="SpamDialog__send">Send</string>
+    <string name="SpamDialog__cancel">Cancel</string>
+    <string name="SpamDialog__invalid_count">Enter a valid number of copies.</string>
+    <string name="conversation__menu_delete_all_my_messages">Delete all my messages</string>
+    <string name="DeleteAllMyMessages__title">Delete all my messages</string>
+    <string name="DeleteAllMyMessages__body">This will delete every message you sent in this chat for everyone. This cannot be undone.</string>
+
     <!-- EOF -->
 </resources>
