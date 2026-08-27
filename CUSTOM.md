@@ -30,16 +30,19 @@ with a small set of "anti-censorship / retention" patches ported from the
 
 ## Signing setup (optional, for a signed APK)
 
-Add these **Actions secrets** in
+The workflow builds using the repo's Docker reproducible build and then signs the
+resulting APKs with **uber-apk-signer**. Add these **Actions secrets** in
 `Settings → Secrets and variables → Actions`:
 
 | Secret | Value |
 |--------|-------|
 | `SECRET_KEYSTORE` | base64 of your `.jks` keystore (e.g. `base64 -w0 keystore.jks`) |
-| `SECRET_KEYSTORE_ALIAS` | your keystore alias |
-| `SECRET_KEYSTORE_PASSWORD` | your keystore password |
+| `SECRET_KEYSTORE_ALIAS` | your key alias inside the keystore |
+| `SECRET_KEYSTORE_PASSWORD` | keystore **and** key password (uber-apk-signer is called with the same password for both) |
 
-If unset, the build produces an **unsigned** APK (fine for sideloading).
+If these are unset, the build produces an **unsigned** APK (fine for sideloading on
+non-Play installs). Note that the **AAB is never signed** this way — uber-apk-signer
+signs APKs only, so a Play-store AAB would need the app's native signing config.
 
 You can instead download the built APK from the "Actions" run's **Artifacts**
 or from the **`custom`** release page.

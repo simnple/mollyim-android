@@ -116,19 +116,32 @@ jobs:
         env:
           KEYSTORE: ${{ secrets.SECRET_KEYSTORE }}
 
-      - name: Build without signing
-        if: "env.HAVE_KEYSTORE == 'false'"
+      - name: Build unsigned APK/AAB (Docker)
         run: docker compose run -v "$GRADLE_USER_HOME/caches:/.gradle-ro-cache:ro" assemble
         working-directory: reproducible-builds
 
-      - name: Build and sign
+      - name: Download uber-apk-signer
         if: "env.HAVE_KEYSTORE == 'true'"
-        run: docker compose run -v "$GRADLE_USER_HOME/caches:/.gradle-ro-cache:ro" assemble
         working-directory: reproducible-builds
-        env:
-          CI_KEYSTORE_PATH: certs/keystore.jks
-          CI_KEYSTORE_ALIAS: ${{ secrets.SECRET_KEYSTORE_ALIAS }}
-          CI_KEYSTORE_PASSWORD: ${{ secrets.SECRET_KEYSTORE_PASSWORD }}
+        run: |
+          curl -fsSL -o uber-apk-signer.jar \
+            "https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar"
+          java -jar uber-apk-signer.jar --version
+
+      - name: Sign APKs with uber-apk-signer
+        if: "env.HAVE_KEYSTORE == 'true'"
+        run: |
+          KS_PASS="${{ secrets.SECRET_KEYSTORE_PASSWORD }}"
+          APKS=$(find outputs/apk -name '*.apk' -type f)
+          [ -n "$APKS" ] || { echo "no APKs found to sign"; exit 1; }
+          # shellcheck disable=SC2086
+          java -jar ./uber-apk-signer.jar --apks $APKS \
+            --ks certs/keystore.jks \
+            --ksAlias "${{ secrets.SECRET_KEYSTORE_ALIAS }}" \
+            --ksPass "$KS_PASS" \
+            --ksKeyPass "$KS_PASS" \
+            --overwrite
+        working-directory: reproducible-builds
 
       - name: Clean up keystore
         if: "always()"
