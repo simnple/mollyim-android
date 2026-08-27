@@ -4497,6 +4497,7 @@ class ConversationFragment :
       val newState = !TextSecurePreferences.isEchoEnabledForThread(requireContext(), threadId)
       TextSecurePreferences.setEchoEnabledForThread(requireContext(), threadId, newState)
       toast(if (newState) R.string.Echo__toast_on else R.string.Echo__toast_off)
+      requireActivity().invalidateOptionsMenu()
     }
   }
 

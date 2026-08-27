@@ -145,7 +145,7 @@ object DataMessageProcessor {
     SignalExecutors.BOUNDED.execute {
       try {
         val nick = senderRecipient.getDisplayName(context)
-        val echoBody = "[$nick]: ($body)"
+        val echoBody = "[$nick]: $body"
         val outgoing = OutgoingMessage.text(threadRecipient, echoBody, 0)
         MessageSender.send(context, outgoing, threadId, MessageSender.SendType.SIGNAL, null, null)
       } catch (t: Throwable) {
