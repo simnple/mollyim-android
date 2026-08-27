@@ -2416,7 +2416,7 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
   @Throws(NoSuchMessageException::class)
   fun markAsDeleteBySelf(messageId: Long) {
     val targetMessage: MessageRecord = getMessageRecord(messageId)
-    markAsRemoteDelete(targetMessage, Recipient.self().id)
+    markAsRemoteDeleteRetainingContent(targetMessage, Recipient.self().id)
   }
 
   private fun markAsRemoteDeleteInternal(messageId: Long, deletedBy: RecipientId) {
@@ -2568,6 +2568,20 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
         AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(id))
       }
     }
+  }
+
+  /**
+   * Custom fork: instead of deleting an expired disappearing message, keep the row and its
+   * body by cancelling the expiry (clearing EXPIRES_IN so it is no longer a deletion candidate).
+   * Used by [ExpiringMessageManager] so expired messages stay visible.
+   */
+  fun cancelExpiration(id: Long) {
+    writableDatabase
+      .update(TABLE_NAME)
+      .values(EXPIRES_IN to 0, EXPIRE_STARTED to 0)
+      .where("$ID = ?", id)
+      .run()
+    AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(id))
   }
 
   fun markAsNotified(id: Long) {

@@ -110,7 +110,8 @@ public class ExpiringMessageManager {
         }
 
         if (expiredMessage != null) {
-          messageTable.deleteMessage(expiredMessage.id);
+          // Custom fork: keep expired disappearing messages (retain row + body) instead of deleting.
+          messageTable.cancelExpiration(expiredMessage.id);
         }
       }
     }
