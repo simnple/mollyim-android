@@ -38,6 +38,11 @@
         android:title="@string/conversation__menu_delete_all_my_messages" />
 
     <item
+        android:id="@+id/menu_echo"
+        android:title="@string/conversation__menu_echo_on"
+        android:checkable="true" />
+
+    <item
         android:id="@+id/menu_format_text_submenu"
         android:title="@string/conversation__menu_format_text"
         android:orderInCategory="9999">

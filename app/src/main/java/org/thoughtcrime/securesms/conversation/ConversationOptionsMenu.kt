@@ -231,6 +231,7 @@ internal object ConversationOptionsMenu {
         R.id.menu_export -> callback.handleExportChat()
         R.id.menu_spam -> callback.handleSpam()
         R.id.menu_delete_all_my_messages -> callback.handleDeleteAllMyMessages()
+        R.id.menu_echo -> callback.handleToggleEcho()
         R.id.menu_create_bubble -> callback.handleCreateBubble()
         androidx.appcompat.R.id.home -> callback.handleGoHome()
         R.id.menu_block -> callback.handleBlock()
@@ -313,5 +314,6 @@ internal object ConversationOptionsMenu {
     fun handleExportChat()
     fun handleSpam()
     fun handleDeleteAllMyMessages()
+    fun handleToggleEcho()
   }
 }

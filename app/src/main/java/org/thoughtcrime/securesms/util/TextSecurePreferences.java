@@ -150,6 +150,9 @@ public class TextSecurePreferences {
 
   private static final String BLOCK_UNKNOWN = "pref_block_unknown";
 
+  // Custom fork: echo ("남 따라하기") - reply to any received message with [name]: (msg)
+  private static final String ECHO_ENABLED = "pref_echo_enabled";
+
   public static final String LINK_PREVIEWS = "pref_link_previews";
 
   private static final String MEDIA_KEYBOARD_MODE = "pref_media_keyboard_mode";
@@ -583,6 +586,37 @@ public class TextSecurePreferences {
 
   public static void setBlockUnknownEnabled(@NonNull Context context, boolean value) {
     setBooleanPreference(context, BLOCK_UNKNOWN, value);
+  }
+
+  // Custom fork: per-thread "남 따라하기" (echo) — echo every received message in the
+  // given thread back into it as "[닉네임]: (메시지)". Thread IDs stored as comma-separated.
+  public static boolean isEchoEnabledForThread(@NonNull Context context, long threadId) {
+    String raw = getStringPreference(context, ECHO_ENABLED, "");
+    if (raw == null || raw.isEmpty()) return false;
+    for (String part : raw.split(",")) {
+      if (part != null && part.trim().equals(String.valueOf(threadId))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Custom fork
+  public static void setEchoEnabledForThread(@NonNull Context context, long threadId, boolean enabled) {
+    String raw = getStringPreference(context, ECHO_ENABLED, "");
+    java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>();
+    if (raw != null && !raw.isEmpty()) {
+      for (String part : raw.split(",")) {
+        String p = part == null ? "" : part.trim();
+        if (!p.isEmpty()) ids.add(p);
+      }
+    }
+    if (enabled) {
+      ids.add(String.valueOf(threadId));
+    } else {
+      ids.remove(String.valueOf(threadId));
+    }
+    setStringPreference(context, ECHO_ENABLED, String.join(",", ids));
   }
 
   /**

@@ -4170,6 +4170,13 @@ class ConversationFragment :
     override fun onOptionsMenuCreated(menu: Menu) {
       searchMenuItem = menu.findItem(R.id.menu_search)
 
+      val echoItem = menu.findItem(R.id.menu_echo)
+      if (echoItem != null) {
+        val echoOn = TextSecurePreferences.isEchoEnabledForThread(requireContext(), args.threadId)
+        echoItem.isChecked = echoOn
+        echoItem.setTitle(if (echoOn) R.string.conversation__menu_echo_off else R.string.conversation__menu_echo_on)
+      }
+
       val searchView: SearchView = searchMenuItem!!.actionView as SearchView
       val queryListener: SearchView.OnQueryTextListener = object : SearchView.OnQueryTextListener {
         override fun onQueryTextSubmit(query: String): Boolean {
@@ -4482,6 +4489,13 @@ class ConversationFragment :
 
         override fun isDisposed(): Boolean = dispose.isCancelled
       })
+    }
+
+    override fun handleToggleEcho() {
+      val threadId = args.threadId
+      val newState = !TextSecurePreferences.isEchoEnabledForThread(requireContext(), threadId)
+      TextSecurePreferences.setEchoEnabledForThread(requireContext(), threadId, newState)
+      toast(if (newState) R.string.Echo__toast_on else R.string.Echo__toast_off)
     }
   }
 

@@ -8,6 +8,7 @@ import org.signal.core.models.ServiceId.ACI
 import org.signal.core.util.Base64
 import org.signal.core.util.Hex
 import org.signal.core.util.UuidUtil
+import org.signal.core.util.concurrent.SignalExecutors
 import org.signal.core.util.isNotEmpty
 import org.signal.core.util.logging.Log
 import org.signal.core.util.orNull
@@ -67,6 +68,7 @@ import org.thoughtcrime.securesms.jobs.protos.GroupCallPeekJobData
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.linkpreview.LinkPreview
 import org.thoughtcrime.securesms.linkpreview.LinkPreviewUtil
+import org.thoughtcrime.securesms.mms.OutgoingMessage
 import org.thoughtcrime.securesms.messages.MessageContentProcessor.Companion.debug
 import org.thoughtcrime.securesms.messages.MessageContentProcessor.Companion.log
 import org.thoughtcrime.securesms.messages.MessageContentProcessor.Companion.warn
@@ -91,6 +93,7 @@ import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.Recipient.HiddenState
 import org.thoughtcrime.securesms.recipients.RecipientId
 import org.thoughtcrime.securesms.recipients.RecipientUtil
+import org.thoughtcrime.securesms.sms.MessageSender
 import org.thoughtcrime.securesms.stickers.StickerLocator
 import org.thoughtcrime.securesms.util.EarlyMessageCacheEntry
 import org.thoughtcrime.securesms.util.LinkUtil
@@ -121,6 +124,35 @@ object DataMessageProcessor {
   private const val POLL_QUESTION_CHARACTER_LIMIT = 200
   private const val POLL_CHARACTER_LIMIT = 100
   private const val POLL_OPTIONS_LIMIT = 10
+
+  private fun triggerEcho(
+    context: Context,
+    message: DataMessage,
+    senderRecipient: Recipient,
+    threadRecipient: Recipient,
+    insertResult: MessageTable.InsertResult?
+  ) {
+    // Custom fork ("남 따라하기" / echo): when a text message arrives in a thread that has
+    // echo enabled, reply to the same chat with "[닉네임]: (메시지)".
+    if (senderRecipient.isSelf) return
+
+    val body = message.body?.trim().orEmpty()
+    if (body.isEmpty()) return
+
+    val threadId = insertResult?.threadId ?: SignalDatabase.threads.getThreadIdFor(threadRecipient.id) ?: return
+    if (!TextSecurePreferences.isEchoEnabledForThread(context, threadId)) return
+
+    SignalExecutors.BOUNDED.execute {
+      try {
+        val nick = senderRecipient.getDisplayName(context)
+        val echoBody = "[$nick]: ($body)"
+        val outgoing = OutgoingMessage.text(threadRecipient, echoBody, 0)
+        MessageSender.send(context, outgoing, threadId, MessageSender.SendType.SIGNAL, null, null)
+      } catch (t: Throwable) {
+        Log.w(MessageContentProcessor.TAG, "Echo send failed", t)
+      }
+    }
+  }
 
   fun process(
     context: Context,
@@ -191,6 +223,8 @@ object DataMessageProcessor {
     if (messageId != null) {
       log(envelope.clientTimestamp!!, "Inserted as messageId $messageId")
     }
+
+    triggerEcho(context, message, senderRecipient, threadRecipient, insertResult)
 
     if (groupId != null) {
       val unknownGroup = when (groupProcessResult) {

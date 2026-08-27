@@ -9984,6 +9984,10 @@
     <string name="conversation__menu_delete_all_my_messages">Delete all my messages</string>
     <string name="DeleteAllMyMessages__title">Delete all my messages</string>
     <string name="DeleteAllMyMessages__body">This will delete every message you sent in this chat for everyone. This cannot be undone.</string>
+    <string name="conversation__menu_echo_on">Echo on (reply like others)</string>
+    <string name="conversation__menu_echo_off">Echo off</string>
+    <string name="Echo__toast_on">Echo enabled in this chat</string>
+    <string name="Echo__toast_off">Echo disabled in this chat</string>
 
     <!-- EOF -->
 </resources>
