@@ -889,7 +889,7 @@ public abstract class MessageRecord extends DisplayRecord {
 
   /** Custom fork: true when this disappearing message reached its expiry (remains visible, body retained). */
   public boolean isMarkedExpired() {
-    return !isRemoteDelete() && getExpiresIn() > 0 && getExpireStarted() == 0;
+    return MessageTypes.isExpiredType(getType());
   }
 
   public @NonNull List<ReactionRecord> getReactions() {

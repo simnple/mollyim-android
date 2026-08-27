@@ -2575,15 +2575,23 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
    * body by cancelling the expiry (clearing EXPIRES_IN so it is no longer a deletion candidate).
    * Used by [ExpiringMessageManager] so expired messages stay visible.
    */
+  /**
+   * Custom fork: mark an expired disappearing message as expired and make it permanent. The row and
+   * body are retained, EXPIRES_IN/EXPIRE_STARTED are cleared so the timer stops and it is not a
+   * deletion candidate, and a custom MESSAGE_EXPIRED_BIT is set on the type so the UI can show
+   * "(만료됨)" persistently.
+   */
   fun cancelExpiration(id: Long) {
-    // Custom fork: keep the message but stop its deletion timer. EXPIRES_IN is retained so the UI
-    // can tell this message reached expiry (expiresIn > 0 && not re-armed via EXPIRE_STARTED), and
-    // EXPIRE_STARTED is cleared so getExpirationStartedMessages() no longer re-enqueues it.
-    writableDatabase
-      .update(TABLE_NAME)
-      .values(EXPIRE_STARTED to 0)
-      .where("$ID = ?", id)
-      .run()
+    writableDatabase.withinTransaction { db ->
+      db.update(TABLE_NAME)
+        .values(EXPIRE_STARTED to 0, EXPIRES_IN to 0)
+        .where("$ID = ?", id)
+        .run()
+      db.execSQL(
+        "UPDATE $TABLE_NAME SET $TYPE = $TYPE | ${MessageTypes.MESSAGE_EXPIRED_BIT} WHERE $ID = ?",
+        buildArgs(id)
+      )
+    }
     AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(id))
   }
 

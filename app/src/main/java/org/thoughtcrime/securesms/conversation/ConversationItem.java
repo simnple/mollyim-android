@@ -35,6 +35,7 @@ import android.text.style.BackgroundColorSpan;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.AttributeSet;
@@ -1171,22 +1172,13 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
     bodyText.setOverflowText(null);
     bodyText.setMaxLength(-1);
 
-    if (RemoteConfig.receiveAdminDelete() && conversationMessage.getDeletedByRecipient() != null) {
-      bodyText.setText(getDeletedMessageText(conversationMessage, hasWallpaper));
-      bodyText.setVisibility(View.VISIBLE);
-      bodyText.setOverflowText(null);
-    } else if (messageRecord.isRemoteDelete()) {
-      String          deletedMessage = context.getString(messageRecord.isOutgoing() ? R.string.ConversationItem_you_deleted_this_message : R.string.ConversationItem_this_message_was_deleted);
-      SpannableString italics        = new SpannableString(deletedMessage);
-      italics.setSpan(new StyleSpan(android.graphics.Typeface.ITALIC), 0, deletedMessage.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-      int textColor = messageRecord.isOutgoing() && hasWallpaper ? colorizer.getOutgoingDeleteTextColor(context)
-                                                                 : ThemeUtil.getThemedColor(context, R.attr.signal_text_primary);
-      italics.setSpan(new ForegroundColorSpan(textColor),
-                      0,
-                      deletedMessage.length(),
-                      Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-      bodyText.setText(italics);
+    if (messageRecord.isMarkedDeleted() || messageRecord.isMarkedExpired() ||
+        (messageRecord.isRemoteDelete() || conversationMessage.getDeletedByRecipient() != null)) {
+      // Custom fork: retained delete-for-everyone / admin-deleted / expired messages keep their
+      // original content. Render the retained body with a strikethrough and a grey-italic status
+      // label (삭제됨/만료됨 or deleted/expired) instead of a generic "deleted this message" notice.
+      CharSequence retainedBody = markRetainedBody(messageRecord, conversationMessage.getDisplayBody(getContext()));
+      bodyText.setText(retainedBody);
       bodyText.setVisibility(View.VISIBLE);
       bodyText.setOverflowText(null);
     } else if (isCaptionlessMms(messageRecord) || isStoryReaction(messageRecord) || isGiftMessage(messageRecord) || messageRecord.isPaymentNotification() || messageRecord.isPaymentTombstone()) {
@@ -1238,6 +1230,34 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
         callToActionStub.get().setVisibility(View.GONE);
       }
     }
+  }
+
+  /**
+   * Custom fork: for retained delete-for-everyone / admin-deleted / expired messages, strike through
+   * the original body and append a grey-italic status label (삭제됨/만료됨 or deleted/expired) after it.
+   */
+  private CharSequence markRetainedBody(@NonNull MessageRecord messageRecord, @NonNull CharSequence originalBody) {
+    boolean ko        = Locale.getDefault().getLanguage().equals("ko");
+    String  bareLabel = null;
+    if (messageRecord.isMarkedExpired()) {
+      bareLabel = ko ? "(만료됨)" : "(expired)";
+    } else if (messageRecord.isMarkedDeleted() || messageRecord.isRemoteDelete() || conversationMessage.getDeletedByRecipient() != null) {
+      bareLabel = ko ? "(삭제됨)" : "(deleted)";
+    }
+
+    SpannableStringBuilder builder = new SpannableStringBuilder(originalBody);
+    if (bareLabel != null) {
+      builder.setSpan(new StrikethroughSpan(), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+      String label = builder.length() == 0 ? bareLabel : " " + bareLabel;
+      int start    = builder.length();
+      builder.append(label);
+      int labelColor = ThemeUtil.getThemedColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant);
+      builder.setSpan(new ForegroundColorSpan(labelColor), start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+      builder.setSpan(new StyleSpan(Typeface.ITALIC), start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    return builder;
   }
 
   private SpannableStringBuilder getDeletedMessageText(@NonNull ConversationMessage message, boolean hasWallpaper) {

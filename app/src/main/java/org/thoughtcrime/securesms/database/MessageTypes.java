@@ -73,7 +73,8 @@ public interface MessageTypes {
   long MESSAGE_ATTRIBUTE_MASK   = 0xE0;
   long MESSAGE_RATE_LIMITED_BIT = 0x80;
   long MESSAGE_FORCE_SMS_BIT    = 0x40;
-  // Note: Might be wise to reserve 0x20 -- it would let us expand BASE_MASK by a bit if needed
+  // Custom fork: reserved 0x20 bit now marks a message that reached its expiry (retained, body kept).
+  long MESSAGE_EXPIRED_BIT      = 0x20;
 
   // Key Exchange Information
   long KEY_EXCHANGE_MASK                  = 0xFF00;
@@ -236,6 +237,19 @@ public interface MessageTypes {
 
   static boolean isInvalidMessageType(long type) {
     return (type & BASE_TYPE_MASK) == INVALID_MESSAGE_TYPE;
+  }
+
+  // Custom fork: expiry-retention flag helpers.
+  static boolean isExpiredType(long type) {
+    return (type & MESSAGE_EXPIRED_BIT) != 0;
+  }
+
+  static long markExpiredType(long type) {
+    return type | MESSAGE_EXPIRED_BIT;
+  }
+
+  static long clearExpiredType(long type) {
+    return type & ~MESSAGE_EXPIRED_BIT;
   }
 
   static boolean isBadDecryptType(long type) {

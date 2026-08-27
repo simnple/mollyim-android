@@ -438,8 +438,11 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
 
     val bodyText = StringUtil.trim(styledText)
 
-    binding.body.visible = bodyText.isNotEmpty()
-    binding.body.text = if (bodyText.isNotEmpty()) buildMarkedBody(record, bodyText) else bodyText
+    // Show the body when it has text, or (custom fork) when the retained message is marked as
+    // deleted/expired so the (삭제됨)/(만료됨) label is visible even on captionless media/stickers.
+    val marked = record.isMarkedDeleted() || record.isMarkedExpired()
+    binding.body.visible = bodyText.isNotEmpty() || marked
+    binding.body.text = if (bodyText.isNotEmpty() || marked) buildMarkedBody(record, bodyText) else bodyText
   }
 
   /**
@@ -448,11 +451,12 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
    */
   private fun buildMarkedBody(record: MessageRecord, bodyText: CharSequence): CharSequence {
     val ko = Locale.getDefault().language == "ko"
-    val label = when {
-      record.isMarkedDeleted() -> if (ko) " (삭제됨)" else " (deleted)"
-      record.isMarkedExpired() -> if (ko) " (만료됨)" else " (expired)"
-      else -> return bodyText
-    }
+    val bareLabel = when {
+      record.isMarkedDeleted() -> if (ko) "(삭제됨)" else "(deleted)"
+      record.isMarkedExpired() -> if (ko) "(만료됨)" else "(expired)"
+      else -> null
+    } ?: return bodyText
+    val label = if (bodyText.isNotEmpty()) " $bareLabel" else bareLabel
 
     val builder = SpannableStringBuilder(bodyText)
     builder.setSpan(StrikethroughSpan(), 0, bodyText.length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)

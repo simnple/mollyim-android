@@ -16,9 +16,11 @@ import io.reactivex.rxjava3.kotlin.subscribeBy
 import org.signal.core.util.concurrent.LifecycleDisposable
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.R
+import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.messagerequests.MessageRequestState
 import org.thoughtcrime.securesms.recipients.Recipient
+import org.thoughtcrime.securesms.util.TextSecurePreferences
 
 /**
  * Delegate object for managing the conversation options menu
@@ -210,6 +212,14 @@ internal object ConversationOptionsMenu {
       val formatText = menu.findItem(R.id.menu_format_text_submenu)
       if (formatText != null) {
         formatText.isVisible = callback.isTextHighlighted()
+      }
+
+      val echoItem = menu.findItem(R.id.menu_echo)
+      if (echoItem != null) {
+        val threadId = callback.getSnapshot().threadId
+        val echoOn = TextSecurePreferences.isEchoEnabledForThread(AppDependencies.application, threadId)
+        echoItem.isChecked = echoOn
+        echoItem.setTitle(if (echoOn) R.string.conversation__menu_echo_off else R.string.conversation__menu_echo_on)
       }
     }
 
