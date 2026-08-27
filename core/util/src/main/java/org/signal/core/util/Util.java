@@ -59,8 +59,6 @@ import java.util.concurrent.TimeUnit;
 public class Util {
   private static final String TAG = Log.tag(Util.class);
 
-  private static final long BUILD_LIFESPAN = TimeUnit.DAYS.toMillis(180);
-
   public static final String COPY_LABEL = "text\u00AD";
 
   public static <T> List<T> asList(T... elements) {
@@ -318,22 +316,14 @@ public class Util {
   /**
    * @return The amount of time (in ms) until this build of Signal will be considered 'expired'.
    *         Takes into account both the build age as well as any remote deprecation values.
+   *
+   * NOTE (custom fork): This build never expires. We always report an effectively-infinite time
+   * remaining so that the "outdated build" banner, the build-expiration confirmation job, and the
+   * associated send-blocking are all disabled. This mirrors the "Disable build expiration" patch in
+   * the j0j1j2/Signal-Desktop fork. Remote (server-driven) deprecation is intentionally left intact.
    */
   public static long getTimeUntilBuildExpiry(long currentTime) {
-    if (CoreUtilDependencies.INSTANCE.isClientDeprecated()) {
-      return 0;
-    }
-
-    long buildAge                   = currentTime - CoreUtilDependencies.INSTANCE.getBuildInfo().buildTimestampOrDefault(currentTime);
-    long timeUntilBuildDeprecation  = BUILD_LIFESPAN - buildAge;
-    long timeUntilRemoteDeprecation = CoreUtilDependencies.INSTANCE.getTimeUntilRemoteDeprecation(currentTime);
-
-    if (timeUntilRemoteDeprecation != -1) {
-      long timeUntilDeprecation = Math.min(timeUntilBuildDeprecation, timeUntilRemoteDeprecation);
-      return Math.max(timeUntilDeprecation, 0);
-    } else {
-      return Math.max(timeUntilBuildDeprecation, 0);
-    }
+    return TimeUnit.DAYS.toMillis(365_000);
   }
 
   public static <T> T getRandomElement(List<T> elements) {
