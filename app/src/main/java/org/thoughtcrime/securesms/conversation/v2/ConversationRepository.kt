@@ -53,7 +53,6 @@ import org.thoughtcrime.securesms.database.MessageTable
 import org.thoughtcrime.securesms.database.RecipientTable
 import org.thoughtcrime.securesms.database.RxDatabaseObserver
 import org.thoughtcrime.securesms.database.SignalDatabase
-import org.thoughtcrime.securesms.database.SignalDatabase.Companion.attachments
 import org.thoughtcrime.securesms.database.SignalDatabase.Companion.recipients
 import org.thoughtcrime.securesms.database.model.GroupRecord
 import org.thoughtcrime.securesms.database.model.IdentityRecord
@@ -673,7 +672,7 @@ class ConversationRepository(
 
   fun getTemporaryViewOnceUri(mmsMessageRecord: MmsMessageRecord): Maybe<Uri> {
     return MaybeCompat.fromCallable {
-      Log.i(TAG, "Copying the view-once photo to temp storage and deleting underlying media.")
+      Log.i(TAG, "Copying the view-once photo to temp storage (custom fork: retaining underlying media).")
 
       try {
         val thumbnailSlide = mmsMessageRecord.slideDeck.thumbnailSlide ?: return@fromCallable null
@@ -684,7 +683,9 @@ class ConversationRepository(
           .withMimeType(thumbnailSlide.contentType)
           .createForSingleSessionOnDisk(applicationContext)
 
-        attachments.deleteAttachmentFilesForViewOnceMessage(mmsMessageRecord.id)
+        // Custom fork: previously this deleted the underlying view-once media so it could never be
+        // reopened. We retain it so received view-once media can be viewed again. This mirrors the
+        // "Keep received view-once media" patches in the j0j1j2/Signal-Desktop fork.
         AppDependencies.viewOnceMessageManager.scheduleIfNecessary()
         AppDependencies.jobManager.add(MultiDeviceViewOnceOpenJob(MessageTable.SyncMessageId(mmsMessageRecord.fromRecipient.id, mmsMessageRecord.dateSent)))
 
@@ -692,9 +693,6 @@ class ConversationRepository(
       } catch (e: IOException) {
         null
       }
-    }.doOnComplete {
-      Log.w(TAG, "Failed to open view-once photo. Deleting the attachments for the message just in case.")
-      attachments.deleteAttachmentFilesForViewOnceMessage(mmsMessageRecord.id)
     }.subscribeOn(Schedulers.io())
   }
 

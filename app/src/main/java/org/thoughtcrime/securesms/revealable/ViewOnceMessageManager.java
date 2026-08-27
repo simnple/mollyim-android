@@ -10,7 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
 import org.signal.core.util.logging.Log;
-import org.thoughtcrime.securesms.database.AttachmentTable;
 import org.thoughtcrime.securesms.database.MessageTable;
 import org.thoughtcrime.securesms.database.SignalDatabase;
 import org.thoughtcrime.securesms.dependencies.AppDependencies;
@@ -24,15 +23,13 @@ public class ViewOnceMessageManager extends TimedEventManager<ViewOnceExpiration
 
   private static final String TAG = Log.tag(ViewOnceMessageManager.class);
 
-  private final MessageTable    mmsDatabase;
-  private final AttachmentTable attachmentDatabase;
+  private final MessageTable mmsDatabase;
 
   public ViewOnceMessageManager(@NonNull Application application) {
     super(application, "RevealableMessageManager");
 
-    this.mmsDatabase        = SignalDatabase.messages();
-    this.attachmentDatabase = SignalDatabase.attachments();
-    
+    this.mmsDatabase = SignalDatabase.messages();
+
     scheduleIfNecessary();
   }
 
@@ -53,8 +50,10 @@ public class ViewOnceMessageManager extends TimedEventManager<ViewOnceExpiration
   @WorkerThread
   @Override
   protected void executeEvent(@NonNull ViewOnceExpirationInfo event) {
-    Log.i(TAG, "Deleting attachments for message " + event.getMessageId());
-    attachmentDatabase.deleteAttachmentFilesForViewOnceMessage(event.getMessageId());
+    // Custom fork: retain view-once media indefinitely instead of auto-clearing it after
+    // MAX_LIFESPAN. Received view-once media stays available. This mirrors the "keep sent and
+    // aged view-once media" patches in the j0j1j2/Signal-Desktop fork.
+    Log.i(TAG, "View-once expiration fired for message " + event.getMessageId() + ", but media retention is enabled. Skipping deletion.");
   }
 
   @WorkerThread
