@@ -87,9 +87,13 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
     private val transparentChatColors = ChatColors.forColor(ChatColors.Id.NotSet, Color.TRANSPARENT)
 
     // Custom fork: read-receipt avatar stack sizing.
-    private const val MAX_READ_AVATARS = 4
+    private const val MAX_READ_AVATARS = 5
     private const val AVATAR_SIZE_DP = 22
     private const val AVATAR_OVERLAP_DP = 12
+
+    // Cache of read receipt recipient ids per message id, so we never query the DB on every binder
+    // pass (the per-message DB read is the source of conversation jank during scroll).
+    private val readReceiptCache = java.util.concurrent.ConcurrentHashMap<Long, List<RecipientId>>()
   }
 
   private var messageId: Long = Long.MAX_VALUE
@@ -898,42 +902,49 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
     }
 
     val selfId = Recipient.self().id
-    val readers = SignalDatabase.groupReceipts
-      .getGroupReceiptInfo(record.id)
-      .filter { it.status == GroupReceiptTable.STATUS_READ && it.recipientId != selfId }
-      .map { Recipient.live(it.recipientId).get() }
+    val readerIds = readReceiptCache.getOrPut(record.id) {
+      SignalDatabase.groupReceipts
+        .getGroupReceiptInfo(record.id)
+        .filter { it.status == GroupReceiptTable.STATUS_READ && it.recipientId != selfId }
+        .map { it.recipientId }
+    }
 
-    if (readers.isEmpty()) {
+    if (readerIds.isEmpty()) {
       container.visibility = View.GONE
       return
     }
 
     container.visibility = View.VISIBLE
     val density = context.resources.displayMetrics.density
+    val ring = androidx.appcompat.content.res.AppCompatResources.getDrawable(context, R.drawable.read_avatar_ring)
+    val borderPx = dpInt(density, 2)
 
-    val showAvatars = readers.take(MAX_READ_AVATARS)
+    val showIds = readerIds.take(MAX_READ_AVATARS)
 
-    showAvatars.forEachIndexed { index, recipient ->
+    showIds.forEachIndexed { index, readerId ->
       val avatar = AvatarImageView(context)
       val params = android.widget.FrameLayout.LayoutParams(dpInt(density, AVATAR_SIZE_DP), dpInt(density, AVATAR_SIZE_DP))
       if (index > 0) {
         params.leftMargin = -dpInt(density, AVATAR_OVERLAP_DP)
       }
       avatar.layoutParams = params
-      avatar.setAvatar(conversationContext.requestManager, recipient, false)
+      avatar.setPadding(borderPx, borderPx, borderPx, borderPx)
+      avatar.background = ring
+      avatar.setAvatar(conversationContext.requestManager, Recipient.live(readerId).get(), false)
       container.addView(avatar)
     }
 
-    if (readers.size > MAX_READ_AVATARS) {
+    if (readerIds.size > MAX_READ_AVATARS) {
       val more = android.widget.TextView(context)
       val params = android.widget.FrameLayout.LayoutParams(dpInt(density, AVATAR_SIZE_DP), dpInt(density, AVATAR_SIZE_DP))
       params.leftMargin = -dpInt(density, AVATAR_OVERLAP_DP)
       more.layoutParams = params
       more.gravity = android.view.Gravity.CENTER
       more.setTextSize(11f)
-      more.text = "+${readers.size}"
+      more.text = "+${readerIds.size}"
       more.setTextColor(0xFF666666.toInt())
-      more.background = androidx.appcompat.content.res.AppCompatResources.getDrawable(context, R.drawable.circle_white)
+      more.setPadding(0, 0, 0, 0)
+      more.background = ring
       container.addView(more)
     }
   }

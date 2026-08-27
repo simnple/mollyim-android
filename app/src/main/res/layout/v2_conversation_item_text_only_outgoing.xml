@@ -65,6 +65,18 @@
             app:scaleEmojis="true"
             tools:text="Mango pickle lorem ipsum" />
 
+        <!-- Custom fork: read-receipt avatar stack, anchored to the bubble's bottom-right. -->
+        <FrameLayout
+            android:id="@+id/conversation_item_read_avatars"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="2dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:visibility="gone" />
+
     </FrameLayout>
 
     <org.thoughtcrime.securesms.components.AlertView
@@ -188,16 +200,6 @@
         app:layout_constraintTop_toBottomOf="@id/conversation_item_body_wrapper"
         app:rcv_outgoing="true" />
 
-    <!-- Custom fork: read-receipt avatar stack, drawn below the outgoing bubble (right-aligned).
-         Populated by the view holder with overlapping circular avatars of who read this message. -->
-    <FrameLayout
-        android:id="@+id/conversation_item_read_avatars"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:layout_marginEnd="8dp"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@+id/conversation_item_body_wrapper"
-        app:layout_constraintEnd_toEndOf="@+id/conversation_item_delivery_status" />
+    <!-- Custom fork: read-receipt avatar stack. Rendered inside the outgoing bubble (bottom-right). -->
 
 </org.thoughtcrime.securesms.conversation.v2.items.V2ConversationItemLayout>

@@ -4520,6 +4520,7 @@ class ConversationFragment :
       val threadId = args.threadId
       val current = TextSecurePreferences.getTimestampOffsetMillisForThread(requireContext(), threadId)
 
+      // CUSTOM_INDEX is the last option; selecting it opens date+time pickers.
       val options = arrayOf(
         getString(R.string.TimestampDialog__off),
         getString(R.string.TimestampDialog__1_min),
@@ -4528,7 +4529,8 @@ class ConversationFragment :
         getString(R.string.TimestampDialog__1_hr),
         getString(R.string.TimestampDialog__today_midnight),
         getString(R.string.TimestampDialog__yesterday),
-        getString(R.string.TimestampDialog__3_days)
+        getString(R.string.TimestampDialog__3_days),
+        getString(R.string.TimestampDialog__custom)
       )
       val offsets = longArrayOf(
         0L,
@@ -4538,8 +4540,10 @@ class ConversationFragment :
         -60 * 60_000L,
         -1,
         -2,
-        -3 * 24 * 60 * 60_000L
+        -3 * 24 * 60 * 60_000L,
+        -100L
       )
+      val customIndex = offsets.size - 1
 
       var checked = 0
       for (i in offsets.indices) {
@@ -4550,6 +4554,11 @@ class ConversationFragment :
       MaterialAlertDialogBuilder(requireContext())
         .setTitle(R.string.TimestampDialog__title)
         .setSingleChoiceItems(options, checked) { dialog, which ->
+          if (which == customIndex) {
+            dialog.dismiss()
+            showCustomTimestampPicker(threadId)
+            return@setSingleChoiceItems
+          }
           val offset = buildTimestampOffset(offsets[which])
           TextSecurePreferences.setTimestampOffsetMillisForThread(requireContext(), threadId, offset)
           val message = if (offset == 0L) {
@@ -4582,6 +4591,46 @@ class ConversationFragment :
 
         else -> marker
       }
+    }
+
+    // Date+Time pickers for a fully custom "send as if it were this past time".
+    private fun showCustomTimestampPicker(threadId: Long) {
+      val cal = java.util.Calendar.getInstance()
+
+      val onTimePicked = object : android.app.TimePickerDialog.OnTimeSetListener {
+        override fun onTimeSet(view: android.widget.TimePicker, hourOfDay: Int, minute: Int) {
+          cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
+          cal.set(java.util.Calendar.MINUTE, minute)
+          cal.set(java.util.Calendar.SECOND, 0)
+          cal.set(java.util.Calendar.MILLISECOND, 0)
+
+          val target = cal.timeInMillis
+          val offset = target - System.currentTimeMillis()
+          // Timestamps are only spoofed into the past (never future).
+          val safeOffset = minOf(offset, 0L)
+          TextSecurePreferences.setTimestampOffsetMillisForThread(requireContext(), threadId, safeOffset)
+          val label = android.text.format.DateFormat.getTimeFormat(requireContext()).format(target)
+          Toast.makeText(
+            requireContext(),
+            getString(R.string.TimestampDialog__toast_on, label),
+            Toast.LENGTH_SHORT
+          ).show()
+          requireActivity().invalidateOptionsMenu()
+        }
+      }
+
+      android.app.DatePickerDialog(
+        requireContext(),
+        { _, year, month, dayOfMonth ->
+          cal.set(java.util.Calendar.YEAR, year)
+          cal.set(java.util.Calendar.MONTH, month)
+          cal.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
+          android.app.TimePickerDialog(requireContext(), onTimePicked, cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE), true).show()
+        },
+        cal.get(java.util.Calendar.YEAR),
+        cal.get(java.util.Calendar.MONTH),
+        cal.get(java.util.Calendar.DAY_OF_MONTH)
+      ).show()
     }
   }
 
