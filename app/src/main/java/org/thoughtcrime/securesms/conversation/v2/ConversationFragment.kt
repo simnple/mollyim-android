@@ -4415,6 +4415,11 @@ class ConversationFragment :
         inputType = InputType.TYPE_CLASS_NUMBER
         hint = getString(R.string.SpamDialog__count_hint)
       }
+      val delayInput = EditText(requireContext()).apply {
+        isSingleLine = true
+        inputType = InputType.TYPE_CLASS_NUMBER
+        hint = getString(R.string.SpamDialog__delay_hint)
+      }
       val bodyInput = EditText(requireContext()).apply {
         isSingleLine = true
         hint = getString(R.string.SpamDialog__message_hint)
@@ -4424,6 +4429,7 @@ class ConversationFragment :
         val pad = (16 * density).toInt()
         setPadding(pad, 0, pad, 0)
         addView(countInput)
+        addView(delayInput)
         addView(bodyInput)
       }
 
@@ -4432,14 +4438,24 @@ class ConversationFragment :
         .setView(container)
         .setPositiveButton(R.string.SpamDialog__send) { _, _ ->
           val count = countInput.text.toString().toIntOrNull()
-          if (count == null || count < 1 || count > 200) {
+          val delay = delayInput.text.toString().toIntOrNull() ?: 0
+          if (count == null || count < 1 || count > 200 || delay < 0) {
             toast(R.string.SpamDialog__invalid_count)
             return@setPositiveButton
           }
           val message = bodyInput.text.toString()
-          repeat(count) {
+          val handler = Handler(Looper.getMainLooper())
+          var sent = 0
+          fun next() {
+            if (sent >= count) return
             sendMessage(body = message, clearCompose = false)
+            sent++
+            if (sent < count) {
+              if (delay > 0) handler.postDelayed(Runnable { next() }, delay.toLong())
+              else next()
+            }
           }
+          next()
         }
         .setNegativeButton(R.string.SpamDialog__cancel, null)
         .show()

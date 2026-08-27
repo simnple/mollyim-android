@@ -9978,6 +9978,7 @@
     <string name="SpamDialog__title">Mass send</string>
     <string name="SpamDialog__count_hint">How many?</string>
     <string name="SpamDialog__message_hint">Message</string>
+    <string name="SpamDialog__delay_hint">Delay between (ms, 0 = none)</string>
     <string name="SpamDialog__send">Send</string>
     <string name="SpamDialog__cancel">Cancel</string>
     <string name="SpamDialog__invalid_count">Enter a valid number of copies.</string>

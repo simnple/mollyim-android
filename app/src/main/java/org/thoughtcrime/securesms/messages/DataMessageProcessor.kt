@@ -125,26 +125,35 @@ object DataMessageProcessor {
   private const val POLL_CHARACTER_LIMIT = 100
   private const val POLL_OPTIONS_LIMIT = 10
   private const val ECHO_ATTACHMENT_WAIT_MILLIS = 2L * 60L * 1000L
+  private val ECHO_TAG = Log.tag(DataMessageProcessor::class.java) + "-Echo"
 
   @Throws(InterruptedException::class)
-  private fun waitForEchoAttachments(messageId: Long): List<Attachment> {
-    // Poll the just-inserted message's attachments until every one has finished downloading
-    // (TRANSFER_PROGRESS_DONE). This lets the echo resend the actual received media/sticker
-    // content ("패킷 그대로") instead of an empty stub. When there are no attachments at all we
-    // return immediately; on timeout we return whatever is already locally available.
+  private fun waitForEchoAttachments(messageId: Long, hasAttachments: Boolean): List<Attachment> {
+    // If the received message has no attachments (pure text / emoji-as-text), there is nothing to
+    // wait for: echo the text only.
+    if (!hasAttachments) {
+      Log.d(ECHO_TAG, "echo[msg=$messageId] no attachments declared, echoing text only")
+      return emptyList()
+    }
+
+    // For media/sticker messages, the attachment rows may not be committed to the DB yet when this
+    // runs (the incoming insert happens inside a transaction), and the actual file download happens
+    // after the download jobs are enqueued. So we poll until every attachment reaches
+    // TRANSFER_PROGRESS_DONE, retrying even while the row set is momentarily empty. On timeout we
+    // send whatever is already locally available (or text-only if nothing downloaded).
     val deadline = System.currentTimeMillis() + ECHO_ATTACHMENT_WAIT_MILLIS
 
     while (System.currentTimeMillis() < deadline) {
       val current = SignalDatabase.attachments.getAttachmentsForMessage(messageId)
-      if (current.isEmpty()) {
-        return emptyList()
-      }
-      if (current.all { it.transferState == AttachmentTable.TRANSFER_PROGRESS_DONE }) {
+      Log.d(ECHO_TAG, "echo[msg=$messageId] poll: ${current.size} attachments, states=${current.map { it.transferState }}")
+      if (current.isNotEmpty() && current.all { it.transferState == AttachmentTable.TRANSFER_PROGRESS_DONE }) {
+        Log.d(ECHO_TAG, "echo[msg=$messageId] all ${current.size} attachments ready")
         return current
       }
       Thread.sleep(500)
     }
 
+    Log.w(ECHO_TAG, "echo[msg=$messageId] timed out waiting for attachments")
     return SignalDatabase.attachments
       .getAttachmentsForMessage(messageId)
       .filter { it.transferState == AttachmentTable.TRANSFER_PROGRESS_DONE }
@@ -156,7 +165,8 @@ object DataMessageProcessor {
     threadRecipient: Recipient,
     insertResult: MessageTable.InsertResult?,
     body: String?,
-    quote: QuoteModel?
+    quote: QuoteModel?,
+    hasAttachments: Boolean
   ) {
     // Custom fork ("남 따라하기" / echo): when an accepted message arrives in a thread with echo
     // enabled, resend it into the same chat as "[닉네임]: 메시지" (with attachments and reply quote).
@@ -172,11 +182,12 @@ object DataMessageProcessor {
       try {
         // Re-read the received message's attachments and wait until they're all downloaded so the
         // media/sticker is resent as-is (not as an empty "[닉네임]: " string).
-        val attachments = waitForEchoAttachments(sourceMessageId)
+        val attachments = waitForEchoAttachments(sourceMessageId, hasAttachments)
         if (text.isEmpty() && attachments.isEmpty() && quote == null) return@execute
 
         val nick = senderRecipient.getDisplayName(context)
         val echoBody = "[$nick]: $text".trimEnd()
+        Log.d(ECHO_TAG, "echo[msg=$sourceMessageId] sending body='$echoBody' with ${attachments.size} attachments")
         val outgoing = OutgoingMessage(
           recipient = threadRecipient,
           body = echoBody,
@@ -185,6 +196,7 @@ object DataMessageProcessor {
           quote = quote
         )
         MessageSender.send(context, outgoing, threadId, MessageSender.SendType.SIGNAL, null, null)
+        Log.d(ECHO_TAG, "echo[msg=$sourceMessageId] send dispatched")
       } catch (t: Throwable) {
         Log.w(MessageContentProcessor.TAG, "Echo send failed", t)
       }
@@ -261,7 +273,7 @@ object DataMessageProcessor {
       log(envelope.clientTimestamp!!, "Inserted as messageId $messageId")
     }
 
-    triggerEcho(context, senderRecipient, threadRecipient, insertResult, message.body, null)
+    triggerEcho(context, senderRecipient, threadRecipient, insertResult, message.body, null, hasAttachments = false)
 
     if (groupId != null) {
       val unknownGroup = when (groupProcessResult) {
@@ -929,7 +941,7 @@ object DataMessageProcessor {
         if (insertResult.needsThreadUpdate) {
           batchCache.addIncomingMessageInsertThreadUpdate(insertResult.threadId)
         }
-        triggerEcho(context, senderRecipient, threadRecipient, insertResult, message.body, quoteModel)
+        triggerEcho(context, senderRecipient, threadRecipient, insertResult, message.body, quoteModel, hasAttachments = mediaMessage.attachments.isNotEmpty())
       }
     } catch (e: MmsException) {
       throw StorageFailedException(e, metadata.sourceServiceId.toString(), metadata.sourceDeviceId)
