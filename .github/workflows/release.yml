@@ -74,6 +74,19 @@ jobs:
         with:
           cache-read-only: true
 
+      - name: Tag HEAD for CI versionName
+        # The app build runs with -PCI=true, which requires
+        # `git describe --tags --exact-match` to succeed. This fork builds the
+        # `custom` branch directly (no MollyIM-style tag push), so we stamp a
+        # local tag on the checked-out HEAD BEFORE `docker compose build` so the
+        # Docker `COPY . /molly/` carries it into the container's git. The tag is
+        # local-only and never pushed.
+        run: |
+          TAG="v${{ env.RELEASE_TAG || github.sha }}"
+          git tag -f "$TAG"
+          echo "Stamped local tag: $TAG"
+          git describe --tags --exact-match
+
       - name: Build Docker image
         run: docker compose build
         working-directory: reproducible-builds
