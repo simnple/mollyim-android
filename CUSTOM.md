@@ -25,24 +25,17 @@ with a small set of "anti-censorship / retention" patches ported from the
      a patch, the rebase is aborted and the run fails so it can be fixed.
   3. if new commits landed, builds via `release.yml`.
 - `.github/workflows/release.yml` does the reproducible Docker build of `custom`,
-  signs the APK when keystore secrets are configured, and updates a rolling
+  signs the APKs with uber-apk-signer's public debug key, and updates a rolling
   `custom` GitHub release with the APK/AAB.
 
-## Signing setup (optional, for a signed APK)
+## Signing (public debug key)
 
-The workflow builds using the repo's Docker reproducible build and then signs the
-resulting APKs with **uber-apk-signer**. Add these **Actions secrets** in
-`Settings → Secrets and variables → Actions`:
+Every build signs the APKs using **uber-apk-signer's built-in public (debug) key**
+(alias `androiddebugkey`). No keystore, password, or Actions secrets are required —
+anyone can install the signed APK, and the signature is publicly reproducible.
 
-| Secret | Value |
-|--------|-------|
-| `SECRET_KEYSTORE` | base64 of your `.jks` keystore (e.g. `base64 -w0 keystore.jks`) |
-| `SECRET_KEYSTORE_ALIAS` | your key alias inside the keystore |
-| `SECRET_KEYSTORE_PASSWORD` | keystore **and** key password (uber-apk-signer is called with the same password for both) |
-
-If these are unset, the build produces an **unsigned** APK (fine for sideloading on
-non-Play installs). Note that the **AAB is never signed** this way — uber-apk-signer
-signs APKs only, so a Play-store AAB would need the app's native signing config.
+Note: the **AAB is never signed** by this workflow — uber-apk-signer signs APKs
+only, so a Play-store AAB would need the app's native signing config.
 
 You can instead download the built APK from the "Actions" run's **Artifacts**
 or from the **`custom`** release page.

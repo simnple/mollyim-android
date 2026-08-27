@@ -1,8 +1,8 @@
 # Build + publish workflow for the custom-fork `custom` branch.
 #
 # Builds a reproducible APK/AAB from the selected branch (MollyIM + private
-# patches) using the project's Docker build, signs it if keystore secrets are
-# configured, and uploads the artifact + a GitHub release.
+# patches) using the project's Docker build, signs APKs with uber-apk-signer's
+# built-in public (debug) key, and uploads the artifact + a GitHub release.
 #
 # It can be triggered:
 #   - manually (workflow_dispatch)  -> builds the selected ref (default `custom`)
@@ -13,11 +13,9 @@
 #     build falls back to values from ci/<BUILD_ENV_FILE>.env:
 #       CI_APP_TITLE, CI_APP_FILENAME, CI_PACKAGE_ID, CI_BUILD_VARIANTS,
 #       CI_FORCE_INTERNAL_USER_FLAG
-#   Secrets (repo secrets) - required for SIGNED builds:
-#       SECRET_KEYSTORE          (base64-encoded .jks keystore)
-#       SECRET_KEYSTORE_ALIAS    (keystore alias)
-#       SECRET_KEYSTORE_PASSWORD (keystore password)
-#     If these are absent the workflow produces an UNSIGNED APK instead.
+#   No secrets are required: APKs are signed with uber-apk-signer's embedded
+#   public debug key (alias androiddebugkey), so anyone can reproduce the same
+#   signature. AABs are not signed by this workflow.
 
 name: Build and release custom
 
@@ -45,7 +43,6 @@ permissions:
 env:
   REF: "${{ inputs.ref || 'custom' }}"
   BUILD_ENV_FILE: ${{ vars.BUILD_ENV_FILE || 'beta-stable.env' }}
-  HAVE_KEYSTORE: ${{ secrets.SECRET_KEYSTORE != '' }}
 
 jobs:
   build:
@@ -109,54 +106,42 @@ jobs:
           BUILD_VARIANTS: ${{ vars.CI_BUILD_VARIANTS }}
           FORCE_INTERNAL_USER_FLAG: ${{ vars.CI_FORCE_INTERNAL_USER_FLAG }}
 
-      - name: Extract signing keys
-        if: "env.HAVE_KEYSTORE == 'true'"
-        run: printenv KEYSTORE | base64 -d > certs/keystore.jks
-        working-directory: reproducible-builds
-        env:
-          KEYSTORE: ${{ secrets.SECRET_KEYSTORE }}
-
       - name: Build unsigned APK/AAB (Docker)
         run: docker compose run -v "$GRADLE_USER_HOME/caches:/.gradle-ro-cache:ro" assemble
         working-directory: reproducible-builds
 
       - name: Download uber-apk-signer
-        if: "env.HAVE_KEYSTORE == 'true'"
         working-directory: reproducible-builds
         run: |
           curl -fsSL -o uber-apk-signer.jar \
             "https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar"
           java -jar uber-apk-signer.jar --version
 
-      - name: Sign APKs with uber-apk-signer
-        if: "env.HAVE_KEYSTORE == 'true'"
+      - name: Sign APKs with public (debug) key
+        # Signs every produced APK with uber-apk-signer's built-in debug keystore
+        # (the well-known public key: alias androiddebugkey, password android). No
+        # private keystore or secrets are needed. Signed files are written to
+        # signed_apks/ (uber names them like <name>-aligned-debugSigned.apk).
+        working-directory: reproducible-builds
         run: |
-          KS_PASS="${{ secrets.SECRET_KEYSTORE_PASSWORD }}"
           APKS=$(find outputs/apk -name '*.apk' -type f)
           [ -n "$APKS" ] || { echo "no APKs found to sign"; exit 1; }
           # shellcheck disable=SC2086
-          java -jar ./uber-apk-signer.jar --apks $APKS \
-            --ks certs/keystore.jks \
-            --ksAlias "${{ secrets.SECRET_KEYSTORE_ALIAS }}" \
-            --ksPass "$KS_PASS" \
-            --ksKeyPass "$KS_PASS" \
-            --overwrite
-        working-directory: reproducible-builds
-
-      - name: Clean up keystore
-        if: "always()"
-        run: rm -f certs/keystore.jks
-        working-directory: reproducible-builds
+          java -jar ./uber-apk-signer.jar --apks $APKS --out signed_apks --verbose
+          echo "Signed APKs:"
+          find signed_apks -name '*.apk' -type f
 
       - name: Log APK and AAB checksums
-        run: find outputs \( -name "*.aab" -o -name "*.apk" \) -exec sha256sum '{}' +
+        run: find outputs signed_apks \( -name "*.aab" -o -name "*.apk" \) -exec sha256sum '{}' +
         working-directory: reproducible-builds
 
       - name: Upload APKs (artifact)
         uses: actions/upload-artifact@v7
         with:
           name: apk
-          path: reproducible-builds/outputs/apk/*/release/*.apk
+          path: |
+            reproducible-builds/signed_apks/*.apk
+            reproducible-builds/outputs/apk/*/release/*.apk
           if-no-files-found: error
 
       - name: Upload Bundles (artifact)
@@ -185,9 +170,9 @@ jobs:
           # Create the release first, then attach the APK/AAB assets by glob.
           gh release create "$TAG" \
             --title "Custom build — $VER" \
-            --notes "Automated custom-fork build of \`${{ env.REF }}\` (MollyIM + private patches). Signed: ${{ env.HAVE_KEYSTORE }}."
-          gh release upload "$TAG" reproducible-builds/outputs/apk/*/release/*.apk --clobber \
-            || echo "warning: no APK matched the upload glob"
+            --notes "Automated custom-fork build of \`${{ env.REF }}\` (MollyIM + private patches). APKs signed with the public debug key via uber-apk-signer; AAB is unsigned."
+          gh release upload "$TAG" reproducible-builds/signed_apks/*.apk --clobber \
+            || echo "warning: no signed APK matched the upload glob"
           gh release upload "$TAG" reproducible-builds/outputs/bundle/*Release/*.aab --clobber \
             || echo "warning: no AAB matched the upload glob"
         env:
