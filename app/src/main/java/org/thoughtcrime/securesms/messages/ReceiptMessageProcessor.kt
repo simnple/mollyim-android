@@ -78,11 +78,9 @@ object ReceiptMessageProcessor {
     earlyMessageCacheEntry: EarlyMessageCacheEntry?,
     batchCache: BatchCache
   ) {
-    if (!TextSecurePreferences.isReadReceiptsEnabled(context)) {
-      log(envelope.clientTimestamp!!, "Ignoring read receipts for IDs: " + readReceipt.timestamp.joinToString(", "))
-      return
-    }
-
+    // Custom fork: we always process received read receipts so that *our* message details show who
+    // has read our messages, even when the "read receipts" setting is turned off. (We never *send*
+    // read receipts, so others never see us as having read their messages regardless.)
     log(envelope.clientTimestamp!!, "Processing read receipts. Sender: $senderRecipientId, Device: ${metadata.sourceDeviceId}, Timestamps: ${readReceipt.timestamp.joinToString(", ")}")
 
     SignalTrace.beginSection("ReceiptMessageProcessor#incrementReadReceiptCounts")
