@@ -100,27 +100,12 @@ public class SendReadReceiptJob extends BaseJob {
    * maximum size.
    */
   public static void enqueue(long threadId, @NonNull RecipientId recipientId, List<MarkedMessageInfo> markedMessageInfos) {
-    if (!TextSecurePreferences.isReadReceiptsEnabled(AppDependencies.getApplication())) {
-      return;
-    }
-
-    if (recipientId.equals(Recipient.self().getId())) {
-      return;
-    }
-
-    JobManager                    jobManager      = AppDependencies.getJobManager();
-    List<List<MarkedMessageInfo>> messageIdChunks = ListUtil.chunk(markedMessageInfos, MAX_TIMESTAMPS);
-
-    if (messageIdChunks.size() > 1) {
-      Log.w(TAG, "Large receipt count! Had to break into multiple chunks. Total count: " + markedMessageInfos.size());
-    }
-
-    for (List<MarkedMessageInfo> chunk : messageIdChunks) {
-      List<Long>      sentTimestamps = chunk.stream().map(info -> info.getSyncMessageId().getTimetamp()).collect(Collectors.toList());
-      List<MessageId> messageIds     = chunk.stream().map(MarkedMessageInfo::getMessageId).collect(Collectors.toList());
-
-      jobManager.add(new SendReadReceiptJob(threadId, recipientId, sentTimestamps, messageIds));
-    }
+    // Custom fork (asymmetric read receipts): never send read receipts to anyone.
+    // The sender's own read status stays private (other people can't see when we
+    // read their messages), while read receipts *we receive* from others are still
+    // stored and shown (they tell us when others read our messages). This is the
+    // "show others' read status, hide my own" behavior.
+    return;
   }
 
   @Override
