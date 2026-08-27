@@ -32,6 +32,8 @@ import org.signal.core.ui.util.ThemeUtil
 import org.signal.core.util.StringUtil
 import org.signal.core.util.dp
 import org.thoughtcrime.securesms.R
+import org.thoughtcrime.securesms.components.AlertView
+import org.thoughtcrime.securesms.components.AvatarImageView
 import org.thoughtcrime.securesms.components.mention.MentionAnnotation
 import org.thoughtcrime.securesms.conversation.BodyBubbleLayoutTransition
 import org.thoughtcrime.securesms.conversation.ConversationAdapterBridge
@@ -43,6 +45,8 @@ import org.thoughtcrime.securesms.conversation.mutiselect.MultiselectPart
 import org.thoughtcrime.securesms.conversation.mutiselect.Multiselectable
 import org.thoughtcrime.securesms.conversation.v2.computed.FormattedDate
 import org.thoughtcrime.securesms.conversation.v2.data.ConversationMessageElement
+import org.thoughtcrime.securesms.database.GroupReceiptTable
+import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.model.MessageRecord
 import org.thoughtcrime.securesms.database.model.MmsMessageRecord
 import org.thoughtcrime.securesms.dependencies.AppDependencies
@@ -81,6 +85,11 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
 
     private val footerCorners = Projection.Corners(18f.dp)
     private val transparentChatColors = ChatColors.forColor(ChatColors.Id.NotSet, Color.TRANSPARENT)
+
+    // Custom fork: read-receipt avatar stack sizing.
+    private const val MAX_READ_AVATARS = 4
+    private const val AVATAR_SIZE_DP = 22
+    private const val AVATAR_OVERLAP_DP = 12
   }
 
   private var messageId: Long = Long.MAX_VALUE
@@ -261,6 +270,7 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
     presentBody()
     presentDate()
     presentDeliveryStatus()
+    presentReadAvatars()
     presentFooterBackground()
     presentFooterPinned()
     presentFooterStarred()
@@ -869,6 +879,66 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
       else -> deliveryStatus.setSent()
     }
   }
+
+  /**
+   * Custom fork: for an outgoing group message, show a right-aligned stack of overlapping circular
+   * avatars below the bubble for everyone who has read the message. When there are more readers
+   * than [MAX_READ_AVATARS], the last circle shows a "+N" overflow count (so the stack never gets
+   * too wide to read). Incoming messages and non-group chats render nothing.
+   */
+  private fun presentReadAvatars() {
+    val container = binding.readAvatars ?: return
+    container.removeAllViews()
+
+    val record = conversationMessage.messageRecord
+    val isOutgoingGroup = record.isOutgoing && conversationMessage.threadRecipient.isGroup
+    if (!isOutgoingGroup) {
+      container.visibility = View.GONE
+      return
+    }
+
+    val selfId = Recipient.self().id
+    val readers = SignalDatabase.groupReceipts
+      .getGroupReceiptInfo(record.id)
+      .filter { it.status == GroupReceiptTable.STATUS_READ && it.recipientId != selfId }
+      .map { Recipient.live(it.recipientId).get() }
+
+    if (readers.isEmpty()) {
+      container.visibility = View.GONE
+      return
+    }
+
+    container.visibility = View.VISIBLE
+    val density = context.resources.displayMetrics.density
+
+    val showAvatars = readers.take(MAX_READ_AVATARS)
+
+    showAvatars.forEachIndexed { index, recipient ->
+      val avatar = AvatarImageView(context)
+      val params = android.widget.FrameLayout.LayoutParams(dpInt(density, AVATAR_SIZE_DP), dpInt(density, AVATAR_SIZE_DP))
+      if (index > 0) {
+        params.leftMargin = -dpInt(density, AVATAR_OVERLAP_DP)
+      }
+      avatar.layoutParams = params
+      avatar.setAvatar(conversationContext.requestManager, recipient, false)
+      container.addView(avatar)
+    }
+
+    if (readers.size > MAX_READ_AVATARS) {
+      val more = android.widget.TextView(context)
+      val params = android.widget.FrameLayout.LayoutParams(dpInt(density, AVATAR_SIZE_DP), dpInt(density, AVATAR_SIZE_DP))
+      params.leftMargin = -dpInt(density, AVATAR_OVERLAP_DP)
+      more.layoutParams = params
+      more.gravity = android.view.Gravity.CENTER
+      more.setTextSize(11f)
+      more.text = "+${readers.size}"
+      more.setTextColor(0xFF666666.toInt())
+      more.background = androidx.appcompat.content.res.AppCompatResources.getDrawable(context, R.drawable.circle_white)
+      container.addView(more)
+    }
+  }
+
+  private fun dpInt(density: Float, dp: Int): Int = (dp * density + 0.5f).toInt()
 
   private fun onBubbleClicked() {
     val messageRecord = conversationMessage.messageRecord

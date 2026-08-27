@@ -47,7 +47,8 @@ data class V2ConversationItemTextOnlyBindingBridge(
   val footerStarred: ImageView,
   val starredSource: TextView?,
   val starredSourceWrapper: View?,
-  val starredSourceAvatar: AvatarImageView?
+  val starredSourceAvatar: AvatarImageView?,
+  val readAvatars: ViewGroup?
 )
 
 /**
@@ -74,10 +75,10 @@ fun V2ConversationItemTextOnlyIncomingBinding.bridge(): V2ConversationItemTextOn
     footerStarred = conversationItemFooterStarred,
     starredSource = conversationItemStarredSource,
     starredSourceWrapper = conversationItemStarredSourceWrapper,
-    starredSourceAvatar = conversationItemStarredSourceAvatar
+    starredSourceAvatar = conversationItemStarredSourceAvatar,
+    readAvatars = null
   )
 }
-
 /**
  * Wraps the binding in the bridge.
  */
@@ -102,6 +103,7 @@ fun V2ConversationItemTextOnlyOutgoingBinding.bridge(): V2ConversationItemTextOn
     footerStarred = conversationItemFooterStarred,
     starredSource = null,
     starredSourceWrapper = null,
-    starredSourceAvatar = null
+    starredSourceAvatar = null,
+    readAvatars = conversationItemReadAvatars
   )
 }
