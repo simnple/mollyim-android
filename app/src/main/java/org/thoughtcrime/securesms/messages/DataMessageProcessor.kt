@@ -125,14 +125,12 @@ object DataMessageProcessor {
   private const val POLL_CHARACTER_LIMIT = 100
   private const val POLL_OPTIONS_LIMIT = 10
   private const val ECHO_ATTACHMENT_WAIT_MILLIS = 2L * 60L * 1000L
-  private val ECHO_TAG = Log.tag(DataMessageProcessor::class.java) + "-Echo"
 
   @Throws(InterruptedException::class)
   private fun waitForEchoAttachments(messageId: Long, hasAttachments: Boolean): List<Attachment> {
     // If the received message has no attachments (pure text / emoji-as-text), there is nothing to
     // wait for: echo the text only.
     if (!hasAttachments) {
-      Log.d(ECHO_TAG, "echo[msg=$messageId] no attachments declared, echoing text only")
       return emptyList()
     }
 
@@ -145,15 +143,12 @@ object DataMessageProcessor {
 
     while (System.currentTimeMillis() < deadline) {
       val current = SignalDatabase.attachments.getAttachmentsForMessage(messageId)
-      Log.d(ECHO_TAG, "echo[msg=$messageId] poll: ${current.size} attachments, states=${current.map { it.transferState }}")
       if (current.isNotEmpty() && current.all { it.transferState == AttachmentTable.TRANSFER_PROGRESS_DONE }) {
-        Log.d(ECHO_TAG, "echo[msg=$messageId] all ${current.size} attachments ready")
         return current
       }
       Thread.sleep(500)
     }
 
-    Log.w(ECHO_TAG, "echo[msg=$messageId] timed out waiting for attachments")
     return SignalDatabase.attachments
       .getAttachmentsForMessage(messageId)
       .filter { it.transferState == AttachmentTable.TRANSFER_PROGRESS_DONE }
@@ -187,7 +182,6 @@ object DataMessageProcessor {
 
         val nick = senderRecipient.getDisplayName(context)
         val echoBody = "[$nick]: $text".trimEnd()
-        Log.d(ECHO_TAG, "echo[msg=$sourceMessageId] sending body='$echoBody' with ${attachments.size} attachments")
         val outgoing = OutgoingMessage(
           recipient = threadRecipient,
           body = echoBody,
@@ -196,7 +190,6 @@ object DataMessageProcessor {
           quote = quote
         )
         MessageSender.send(context, outgoing, threadId, MessageSender.SendType.SIGNAL, null, null)
-        Log.d(ECHO_TAG, "echo[msg=$sourceMessageId] send dispatched")
       } catch (t: Throwable) {
         Log.w(MessageContentProcessor.TAG, "Echo send failed", t)
       }
