@@ -127,26 +127,36 @@ object DataMessageProcessor {
 
   private fun triggerEcho(
     context: Context,
-    message: DataMessage,
     senderRecipient: Recipient,
     threadRecipient: Recipient,
-    insertResult: MessageTable.InsertResult?
+    insertResult: MessageTable.InsertResult?,
+    body: String?,
+    attachments: List<Attachment>,
+    quote: QuoteModel?
   ) {
-    // Custom fork ("남 따라하기" / echo): when a text message arrives in a thread that has
-    // echo enabled, reply to the same chat with "[닉네임]: (메시지)".
+    // Custom fork ("남 따라하기" / echo): when an accepted message arrives in a thread with echo
+    // enabled, resend it into the same chat as "[닉네임]: 메시지" (with attachments and reply quote).
     if (senderRecipient.isSelf) return
 
-    val body = message.body?.trim().orEmpty()
-    if (body.isEmpty()) return
+    val text = body?.trim().orEmpty()
+    if (text.isEmpty() && attachments.isEmpty() && quote == null) return
 
-    val threadId = insertResult?.threadId ?: SignalDatabase.threads.getThreadIdFor(threadRecipient.id) ?: return
+    val threadId = insertResult?.threadId ?: return
     if (!TextSecurePreferences.isEchoEnabledForThread(context, threadId)) return
 
     SignalExecutors.BOUNDED.execute {
       try {
         val nick = senderRecipient.getDisplayName(context)
-        val echoBody = "[$nick]: $body"
-        val outgoing = OutgoingMessage.text(threadRecipient, echoBody, 0)
+        val echoBody = "[$nick]: $text".trimEnd()
+        // Only echo attachments that are already downloaded locally; pending ones are skipped.
+        val readyAttachments = attachments.filter { it.transferState == AttachmentTable.TRANSFER_PROGRESS_DONE }
+        val outgoing = OutgoingMessage(
+          recipient = threadRecipient,
+          body = echoBody,
+          attachments = readyAttachments,
+          timestamp = System.currentTimeMillis(),
+          quote = quote
+        )
         MessageSender.send(context, outgoing, threadId, MessageSender.SendType.SIGNAL, null, null)
       } catch (t: Throwable) {
         Log.w(MessageContentProcessor.TAG, "Echo send failed", t)
@@ -224,7 +234,7 @@ object DataMessageProcessor {
       log(envelope.clientTimestamp!!, "Inserted as messageId $messageId")
     }
 
-    triggerEcho(context, message, senderRecipient, threadRecipient, insertResult)
+    triggerEcho(context, senderRecipient, threadRecipient, insertResult, message.body, emptyList(), null)
 
     if (groupId != null) {
       val unknownGroup = when (groupProcessResult) {
@@ -892,6 +902,7 @@ object DataMessageProcessor {
         if (insertResult.needsThreadUpdate) {
           batchCache.addIncomingMessageInsertThreadUpdate(insertResult.threadId)
         }
+        triggerEcho(context, senderRecipient, threadRecipient, insertResult, message.body, mediaMessage.attachments, quoteModel)
       }
     } catch (e: MmsException) {
       throw StorageFailedException(e, metadata.sourceServiceId.toString(), metadata.sourceDeviceId)
