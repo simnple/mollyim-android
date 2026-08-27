@@ -16,9 +16,8 @@ public class ViewOnceUtil {
       return true;
     }
 
-    if (message.isOutgoing()) {
-      return false;
-    }
+    // Custom fork: allow the sender to view their own sent view-once media (previously outgoing
+    // returned false here, so you could never reopen your own photo).
 
     if (message.getSlideDeck().getThumbnailSlide() == null) {
       return false;
@@ -60,10 +59,8 @@ public class ViewOnceUtil {
       return true;
     }
 
-    if (message.isOutgoing()) {
-      return true;
-    }
-
+    // Custom fork: sender's own sent view-once media is no longer forced to "viewed", so they can
+    // reopen their own photo while the local file is retained.
     return false;
   }
 }
