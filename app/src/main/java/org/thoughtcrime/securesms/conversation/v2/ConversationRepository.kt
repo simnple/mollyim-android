@@ -805,7 +805,10 @@ class ConversationRepository(
         SlideDeck()
       }
 
-      if (messageRecord.isViewOnceMessage()) {
+      if (messageRecord.isViewOnceMessage() && !messageRecord.isOutgoing) {
+        // Custom fork: only incoming view-once messages are hidden behind a placeholder
+        // (one-time view). The sender's own sent copy keeps its real media slide deck so they can
+        // reopen their own view-once photo from the conversation.
         val attachment = TombstoneAttachment.forQuote()
         slideDeck = SlideDeck()
         slideDeck.addSlide(MediaUtil.getSlideForAttachment(attachment))
