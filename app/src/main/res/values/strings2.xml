@@ -20,6 +20,8 @@
     <string name="preferences__include_beta_updates">Include beta updates</string>
     <string name="preferences__beta_versions_are_intended_for_testing_purposes_and_may_contain_bugs">Beta versions are intended for testing purposes and may contain bugs</string>
     <string name="preferences__block_unknown">Block unknown</string>
+    <string name="preferences__show_blocked_messages">Show messages from blocked people</string>
+    <string name="preferences__show_blocked_messages_summary">Keep receiving and displaying messages from people you have explicitly blocked.</string>
     <string name="preferences__block_users_youve_never_been_in_contact_with_and_who_are_not_saved_in_your_contacts">Block users you\'ve never been in contact with and those not saved as contacts.</string>
     <string name="preferences__map_normal">Normal</string>
     <string name="preferences__map_hybrid">Hybrid</string>

@@ -149,6 +149,15 @@ open class MessageContentProcessor(private val context: Context) {
 
     @Throws(BadGroupIdException::class)
     private fun shouldIgnore(content: Content, recipient: Recipient, threadRecipient: Recipient): Boolean {
+      // Custom fork: when "show blocked messages" is enabled, don't drop a direct (1:1) content
+      // message from an explicitly blocked sender, so the user can still read what they said.
+      if (!threadRecipient.isGroup && recipient.isBlocked && !recipient.isSelf &&
+          TextSecurePreferences.isShowBlockedMessagesEnabled(AppDependencies.application)) {
+        val dm = content.dataMessage ?: content.editMessage?.dataMessage
+        if (dm != null && (dm.body != null || dm.attachments.isNotEmpty())) {
+          return false
+        }
+      }
       // MOLLY: Call shouldBlockSender(recipient) instead of senderRecipient.isBlocked()
       if (content.dataMessage != null) {
         return shouldIgnoreDataMessage(content.dataMessage!!, recipient, threadRecipient)

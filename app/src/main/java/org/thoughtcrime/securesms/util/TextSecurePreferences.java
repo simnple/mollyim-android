@@ -153,6 +153,9 @@ public class TextSecurePreferences {
   // Custom fork: echo ("남 따라하기") - reply to any received message with [name]: (msg)
   private static final String ECHO_ENABLED = "pref_echo_enabled";
 
+  // Custom fork: optionally keep / show messages from explicitly blocked senders
+  private static final String SHOW_BLOCKED_MESSAGES = "pref_show_blocked_messages";
+
   public static final String LINK_PREVIEWS = "pref_link_previews";
 
   private static final String MEDIA_KEYBOARD_MODE = "pref_media_keyboard_mode";
@@ -617,6 +620,16 @@ public class TextSecurePreferences {
       ids.remove(String.valueOf(threadId));
     }
     setStringPreference(context, ECHO_ENABLED, String.join(",", ids));
+  }
+
+  // Custom fork
+  public static boolean isShowBlockedMessagesEnabled(@NonNull Context context) {
+    return getBooleanPreference(context, SHOW_BLOCKED_MESSAGES, false);
+  }
+
+  // Custom fork
+  public static void setShowBlockedMessagesEnabled(@NonNull Context context, boolean value) {
+    setBooleanPreference(context, SHOW_BLOCKED_MESSAGES, value);
   }
 
   /**

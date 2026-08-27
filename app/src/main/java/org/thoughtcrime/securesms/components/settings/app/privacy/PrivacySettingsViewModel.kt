@@ -34,6 +34,12 @@ class PrivacySettingsViewModel(
     refresh()
   }
 
+  // Custom fork
+  fun setShowBlockedMessagesEnabled(enabled: Boolean) {
+    TextSecurePreferences.setShowBlockedMessagesEnabled(application, enabled)
+    refresh()
+  }
+
   fun setReadReceiptsEnabled(enabled: Boolean) {
     sharedPreferences.edit().putBoolean(TextSecurePreferences.READ_RECEIPTS_PREF, enabled).apply()
     repository.syncReadReceiptState()
@@ -86,6 +92,7 @@ class PrivacySettingsViewModel(
     return PrivacySettingsState(
       blockedCount = 0,
       blockUnknown = TextSecurePreferences.isBlockUnknownEnabled(application),
+      showBlockedMessages = TextSecurePreferences.isShowBlockedMessagesEnabled(application),
       readReceipts = TextSecurePreferences.isReadReceiptsEnabled(application),
       typingIndicators = TextSecurePreferences.isTypingIndicatorsEnabled(application),
       passphraseLock = TextSecurePreferences.isPassphraseLockEnabled(application),

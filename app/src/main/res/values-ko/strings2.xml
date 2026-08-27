@@ -25,6 +25,8 @@
     <string name="BlockUnblockDialog_delete_this_contact">이 연락처를 삭제할까요?</string>
     <string name="arrays__none">없음</string>
     <string name="preferences__block_unknown">모르는 유저를 차단하기</string>
+    <string name="preferences__show_blocked_messages">차단한 사람의 메시지 보기</string>
+    <string name="preferences__show_blocked_messages_summary">명시적으로 차단한 사람의 메시지를 계속 받아서 표시합니다.</string>
     <string name="preferences__block_users_youve_never_been_in_contact_with_and_who_are_not_saved_in_your_contacts">한 번도 연락한 적이 없는 사용자와 연락처에 저장되지 않은 사용자를 차단합니다.</string>
     <string name="preferences__map_hybrid">하이브리드</string>
     <string name="preferences__map_normal">일반</string>

@@ -200,6 +200,15 @@ class PrivacySettingsFragment : DSLSettingsFragment(R.string.preferences__privac
         }
       )
 
+      switchPref(
+        title = DSLSettingsText.from(R.string.preferences__show_blocked_messages),
+        summary = DSLSettingsText.from(getString(R.string.preferences__show_blocked_messages_summary)),
+        isChecked = state.showBlockedMessages,
+        onClick = {
+          viewModel.setShowBlockedMessagesEnabled(!state.showBlockedMessages)
+        }
+      )
+
       dividerPref()
 
       sectionHeaderPref(R.string.PrivacySettingsFragment__disappearing_messages)
