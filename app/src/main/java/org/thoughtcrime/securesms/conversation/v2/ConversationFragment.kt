@@ -4515,6 +4515,74 @@ class ConversationFragment :
       toast(if (newState) R.string.Echo__toast_on else R.string.Echo__toast_off)
       requireActivity().invalidateOptionsMenu()
     }
+
+    override fun handleTimestampSpoof() {
+      val threadId = args.threadId
+      val current = TextSecurePreferences.getTimestampOffsetMillisForThread(requireContext(), threadId)
+
+      val options = arrayOf(
+        getString(R.string.TimestampDialog__off),
+        getString(R.string.TimestampDialog__1_min),
+        getString(R.string.TimestampDialog__5_min),
+        getString(R.string.TimestampDialog__30_min),
+        getString(R.string.TimestampDialog__1_hr),
+        getString(R.string.TimestampDialog__today_midnight),
+        getString(R.string.TimestampDialog__yesterday),
+        getString(R.string.TimestampDialog__3_days)
+      )
+      val offsets = longArrayOf(
+        0L,
+        -60_000L,
+        -5 * 60_000L,
+        -30 * 60_000L,
+        -60 * 60_000L,
+        -1,
+        -2,
+        -3 * 24 * 60 * 60_000L
+      )
+
+      var checked = 0
+      for (i in offsets.indices) {
+        val computed = buildTimestampOffset(offsets[i])
+        if (computed == current) checked = i
+      }
+
+      MaterialAlertDialogBuilder(requireContext())
+        .setTitle(R.string.TimestampDialog__title)
+        .setSingleChoiceItems(options, checked) { dialog, which ->
+          val offset = buildTimestampOffset(offsets[which])
+          TextSecurePreferences.setTimestampOffsetMillisForThread(requireContext(), threadId, offset)
+          val message = if (offset == 0L) {
+            getString(R.string.TimestampDialog__toast_off)
+          } else {
+            getString(R.string.TimestampDialog__toast_on, options[which])
+          }
+          Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+          requireActivity().invalidateOptionsMenu()
+          dialog.dismiss()
+        }
+        .setNegativeButton(R.string.TimestampDialog__cancel, null)
+        .show()
+    }
+
+    // Resolves special marker offsets (-1 = today midnight, -2 = yesterday same time) into real ms.
+    private fun buildTimestampOffset(marker: Long): Long {
+      val now = System.currentTimeMillis()
+      return when (marker) {
+        -1L -> {
+          val cal = java.util.Calendar.getInstance().apply { timeInMillis = now }
+          cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+          cal.set(java.util.Calendar.MINUTE, 0)
+          cal.set(java.util.Calendar.SECOND, 0)
+          cal.set(java.util.Calendar.MILLISECOND, 0)
+          cal.timeInMillis - now
+        }
+
+        -2L -> -24L * 60L * 60L * 1000L
+
+        else -> marker
+      }
+    }
   }
 
   private inner class OnReactionsSelectedListener : ConversationReactionOverlay.OnReactionSelectedListener {

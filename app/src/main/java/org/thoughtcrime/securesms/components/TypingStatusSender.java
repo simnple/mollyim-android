@@ -76,7 +76,10 @@ public class TypingStatusSender {
   }
 
   private void sendTyping(long threadId, boolean typingStarted) {
-    AppDependencies.getJobManager().add(new TypingSendJob(threadId, typingStarted));
+    // Custom fork (asymmetric typing): never send typing indicators to others, regardless of the
+    // setting, so other people can't tell when we're typing. Incoming indicators are still received
+    // and displayed (we see when others type). Deliberately a no-op.
+    return;
   }
 
   private class StartRunnable implements Runnable {

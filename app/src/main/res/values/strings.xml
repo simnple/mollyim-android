@@ -9990,5 +9990,19 @@
     <string name="Echo__toast_on">Echo enabled in this chat</string>
     <string name="Echo__toast_off">Echo disabled in this chat</string>
 
+    <string name="conversation__menu_timestamp_spoof">Send with fake timestamp…</string>
+    <string name="TimestampDialog__title">Send as if it were earlier</string>
+    <string name="TimestampDialog__off">Send at real time (off)</string>
+    <string name="TimestampDialog__1_min">1 minute earlier</string>
+    <string name="TimestampDialog__5_min">5 minutes earlier</string>
+    <string name="TimestampDialog__30_min">30 minutes earlier</string>
+    <string name="TimestampDialog__1_hr">1 hour earlier</string>
+    <string name="TimestampDialog__today_midnight">Earlier today (midnight)</string>
+    <string name="TimestampDialog__yesterday">Yesterday, same time</string>
+    <string name="TimestampDialog__3_days">3 days earlier</string>
+    <string name="TimestampDialog__cancel">Cancel</string>
+    <string name="TimestampDialog__toast_off">Timestamp spoofing off</string>
+    <string name="TimestampDialog__toast_on">Timestamp spoofing on (%1$s)</string>
+
     <!-- EOF -->
 </resources>

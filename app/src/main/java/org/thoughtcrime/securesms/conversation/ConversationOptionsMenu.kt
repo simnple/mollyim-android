@@ -221,8 +221,19 @@ internal object ConversationOptionsMenu {
         echoItem.isChecked = echoOn
         echoItem.setTitle(if (echoOn) R.string.conversation__menu_echo_off else R.string.conversation__menu_echo_on)
       }
-    }
 
+      val tsItem = menu.findItem(R.id.menu_timestamp_spoof)
+      if (tsItem != null) {
+        val threadId = callback.getSnapshot().threadId
+        val offsetMillis = TextSecurePreferences.getTimestampOffsetMillisForThread(AppDependencies.application, threadId)
+        val label: String = if (offsetMillis == 0L) {
+          AppDependencies.application.getString(R.string.conversation__menu_timestamp_spoof)
+        } else {
+          AppDependencies.application.getString(R.string.TimestampDialog__toast_on, offsetMillis.toString())
+        }
+        tsItem.setTitle(label)
+      }
+    }
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
       when (menuItem.itemId) {
         R.id.menu_call_secure -> callback.handleDial()
@@ -242,6 +253,7 @@ internal object ConversationOptionsMenu {
         R.id.menu_spam -> callback.handleSpam()
         R.id.menu_delete_all_my_messages -> callback.handleDeleteAllMyMessages()
         R.id.menu_echo -> callback.handleToggleEcho()
+        R.id.menu_timestamp_spoof -> callback.handleTimestampSpoof()
         R.id.menu_create_bubble -> callback.handleCreateBubble()
         androidx.appcompat.R.id.home -> callback.handleGoHome()
         R.id.menu_block -> callback.handleBlock()
@@ -325,5 +337,6 @@ internal object ConversationOptionsMenu {
     fun handleSpam()
     fun handleDeleteAllMyMessages()
     fun handleToggleEcho()
+    fun handleTimestampSpoof()
   }
 }

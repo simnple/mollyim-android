@@ -597,10 +597,8 @@ open class MessageContentProcessor(private val context: Context) {
     typingMessage: TypingMessage,
     senderRecipient: Recipient
   ) {
-    if (!TextSecurePreferences.isTypingIndicatorsEnabled(context)) {
-      return
-    }
-
+    // Custom fork (asymmetric typing): always show incoming typing indicators even when the typing
+    // setting is off. (We never send our own, so others don't see us type, but we see theirs.)
     val threadId: Long = if (typingMessage.groupId != null) {
       val groupId = GroupId.push(typingMessage.groupId!!)
       if (!SignalDatabase.groups.isCurrentMember(groupId, senderRecipient.id)) {

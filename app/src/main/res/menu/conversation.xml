@@ -43,6 +43,10 @@
         android:checkable="true" />
 
     <item
+        android:id="@+id/menu_timestamp_spoof"
+        android:title="@string/conversation__menu_timestamp_spoof" />
+
+    <item
         android:id="@+id/menu_format_text_submenu"
         android:title="@string/conversation__menu_format_text"
         android:orderInCategory="9999">
