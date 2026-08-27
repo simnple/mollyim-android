@@ -57,7 +57,7 @@
             android:textColor="@color/conversation_item_sent_text_primary_color"
             android:textColorLink="@color/conversation_item_sent_text_primary_color"
             android:textSize="16sp"
-            android:paddingBottom="26dp"
+            android:paddingBottom="30dp"
             app:emoji_maxLength="1000"
             app:emoji_renderMentions="true"
             app:emoji_renderSpoilers="true"
