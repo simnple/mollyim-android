@@ -2398,6 +2398,21 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
     }
   }
 
+  /**
+   * Custom fork: like [markAsRemoteDelete], but for a RECEIVED delete-for-everyone request. The
+   * message body, quoted content, link previews, shared contacts, attachment files and edit history
+   * are retained so the deleted-for-everyone message stays visible locally, while side-channel data
+   * (mentions, reactions, polls, pins, group story replies) is still cleaned up for integrity.
+   * Mirrors the "keep deleted-for-everyone media visible" + "keep edit history viewable after
+   * delete-for-everyone" patches in the j0j1j2/Signal-Desktop fork.
+   */
+  fun markAsRemoteDeleteRetainingContent(targetMessage: MessageRecord, deletedBy: RecipientId) {
+    writableDatabase.withinTransaction { _ ->
+      val latestRevisionId = (targetMessage as? MmsMessageRecord)?.latestRevisionId?.id ?: targetMessage.id
+      markAsRemoteDeleteInternalRetainingContent(latestRevisionId, deletedBy)
+    }
+  }
+
   @Throws(NoSuchMessageException::class)
   fun markAsDeleteBySelf(messageId: Long) {
     val targetMessage: MessageRecord = getMessageRecord(messageId)
@@ -2446,6 +2461,40 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
     if (deletedAttachments) {
       AppDependencies.databaseObserver.notifyAttachmentDeletedObservers()
     }
+  }
+
+  /**
+   * Custom fork: variant of [markAsRemoteDeleteInternal] that retains the message content and
+   * attachment files so a received delete-for-everyone message stays fully visible locally.
+   */
+  private fun markAsRemoteDeleteInternalRetainingContent(messageId: Long, deletedBy: RecipientId) {
+    writableDatabase.withinTransaction { db ->
+      db.update(TABLE_NAME)
+        .values(
+          DELETED_BY to deletedBy.toLong(),
+          STARRED to 0
+        )
+        .where("$ID = ?", messageId)
+        .run()
+
+      mentions.deleteMentionsForMessage(messageId)
+      SignalDatabase.messageLog.deleteAllRelatedToMessage(messageId)
+      reactions.deleteReactions(MessageId(messageId))
+      deleteGroupStoryReplies(messageId)
+      disassociateStoryQuotes(messageId)
+      polls.deletePoll(messageId)
+      disassociatePollFromPollTerminate(polls.getPollTerminateMessageId(messageId))
+      disassociatePinnedMessage(messageId)
+
+      val threadId = getThreadIdForMessage(messageId)
+      threads.update(threadId, false)
+      notifyConversationListeners(threadId)
+    }
+
+    // NOTE: no OptimizeMessageSearchIndexJob / attachment-deleted notification here; the body and
+    // attachments are intentionally retained.
+    AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(messageId))
+    AppDependencies.databaseObserver.notifyConversationListListeners()
   }
 
   fun markDownloadState(messageId: Long, state: Long) {
