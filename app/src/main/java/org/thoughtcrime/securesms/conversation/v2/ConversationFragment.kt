@@ -4476,7 +4476,8 @@ class ConversationFragment :
             context = requireContext(),
             messageRecords = myMessages,
             title = getString(R.string.DeleteAllMyMessages__title),
-            message = getString(R.string.DeleteAllMyMessages__body)
+            message = getString(R.string.DeleteAllMyMessages__body),
+            forceRemoteDelete = true
           ).observeOn(AndroidSchedulers.mainThread())
             .subscribe()
             .addTo(disposables)
