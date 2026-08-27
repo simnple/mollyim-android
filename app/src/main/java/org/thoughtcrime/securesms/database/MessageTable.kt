@@ -2576,9 +2576,12 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
    * Used by [ExpiringMessageManager] so expired messages stay visible.
    */
   fun cancelExpiration(id: Long) {
+    // Custom fork: keep the message but stop its deletion timer. EXPIRES_IN is retained so the UI
+    // can tell this message reached expiry (expiresIn > 0 && not re-armed via EXPIRE_STARTED), and
+    // EXPIRE_STARTED is cleared so getExpirationStartedMessages() no longer re-enqueues it.
     writableDatabase
       .update(TABLE_NAME)
-      .values(EXPIRES_IN to 0, EXPIRE_STARTED to 0)
+      .values(EXPIRE_STARTED to 0)
       .where("$ID = ?", id)
       .run()
     AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(id))

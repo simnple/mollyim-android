@@ -16,6 +16,8 @@ import android.text.style.BackgroundColorSpan
 import android.text.style.CharacterStyle
 import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
 import android.text.style.URLSpan
 import android.util.TypedValue
 import android.view.GestureDetector
@@ -437,7 +439,30 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
     val bodyText = StringUtil.trim(styledText)
 
     binding.body.visible = bodyText.isNotEmpty()
-    binding.body.text = bodyText
+    binding.body.text = if (bodyText.isNotEmpty()) buildMarkedBody(record, bodyText) else bodyText
+  }
+
+  /**
+   * Custom fork: for retained deleted-for-everyone / expired messages, strike through the original
+   * body and append a grey-italic status label after it.
+   */
+  private fun buildMarkedBody(record: MessageRecord, bodyText: CharSequence): CharSequence {
+    val ko = Locale.getDefault().language == "ko"
+    val label = when {
+      record.isMarkedDeleted() -> if (ko) " (삭제됨)" else " (deleted)"
+      record.isMarkedExpired() -> if (ko) " (만료됨)" else " (expired)"
+      else -> return bodyText
+    }
+
+    val builder = SpannableStringBuilder(bodyText)
+    builder.setSpan(StrikethroughSpan(), 0, bodyText.length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+
+    val start = builder.length
+    builder.append(label)
+    builder.setSpan(ForegroundColorSpan(themeDelegate.getFooterForegroundColor(conversationMessage)), start, builder.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+    builder.setSpan(StyleSpan(Typeface.ITALIC), start, builder.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+    return builder
   }
 
   private fun linkifyMessageBody(messageBody: Spannable) {

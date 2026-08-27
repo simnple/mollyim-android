@@ -285,7 +285,6 @@ public final class MenuState {
   {
     return !actionMessage &&
            !isNonAdminInAnnouncementGroup &&
-           !messageRecord.isRemoteDelete() &&
            !messageRecord.isPending() &&
            !messageRecord.isFailed() &&
            !isDisplayingMessageRequest &&
