@@ -1,33 +1,64 @@
-name: Release
+# Build + publish workflow for the custom-fork `custom` branch.
+#
+# Builds a reproducible APK/AAB from the selected branch (MollyIM + private
+# patches) using the project's Docker build, signs it if keystore secrets are
+# configured, and uploads the artifact + a GitHub release.
+#
+# It can be triggered:
+#   - manually (workflow_dispatch)  -> builds the selected ref (default `custom`)
+#   - by the sync workflow (workflow_call) after a successful rebase
+#
+# Required repository CONFIGURATION (Settings > Secrets and variables > Actions):
+#   Variables (repo vars) - optional; override release naming. If unset, the
+#     build falls back to values from ci/<BUILD_ENV_FILE>.env:
+#       CI_APP_TITLE, CI_APP_FILENAME, CI_PACKAGE_ID, CI_BUILD_VARIANTS,
+#       CI_FORCE_INTERNAL_USER_FLAG
+#   Secrets (repo secrets) - required for SIGNED builds:
+#       SECRET_KEYSTORE          (base64-encoded .jks keystore)
+#       SECRET_KEYSTORE_ALIAS    (keystore alias)
+#       SECRET_KEYSTORE_PASSWORD (keystore password)
+#     If these are absent the workflow produces an UNSIGNED APK instead.
+
+name: Build and release custom
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch/ref to build (default: custom)'
+        required: false
+        default: 'custom'
   workflow_call:
     inputs:
-      version:
-        required: true
+      ref:
+        required: false
         type: string
+        default: 'custom'
+      version:
+        required: false
+        type: string
+        default: ''
 
 permissions:
-  contents: read # to fetch code (actions/checkout)
+  contents: write
 
 env:
-  TAG_REF: "${{ inputs.version || github.ref_name }}"
+  REF: "${{ inputs.ref || 'custom' }}"
   BUILD_ENV_FILE: ${{ vars.BUILD_ENV_FILE || 'beta-stable.env' }}
   HAVE_KEYSTORE: ${{ secrets.SECRET_KEYSTORE != '' }}
 
 jobs:
   build:
-    name: Build
-    if: "github.event.base_ref != 'refs/heads/upstream-main'"
+    name: Build and publish custom
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: "${{ env.TAG_REF }}"
+          ref: "${{ env.REF }}"
+          persist-credentials: false
 
       - name: Free up disk space in runner
         uses: ./.github/actions/disk-cleanup
@@ -51,8 +82,7 @@ jobs:
         run: |
           cp -v "ci/$BUILD_ENV_FILE" .env
           for var in APP_TITLE APP_FILENAME PACKAGE_ID \
-                     BUILD_VARIANTS FORCE_INTERNAL_USER_FLAG \
-                     MAPS_API_KEY; do
+                     BUILD_VARIANTS FORCE_INTERNAL_USER_FLAG; do
             if [ -n "${!var}" ]; then
               echo "Setting CI_$var=${!var}"
               echo "CI_$var=${!var}" >> $GITHUB_ENV
@@ -96,86 +126,47 @@ jobs:
         run: find outputs \( -name "*.aab" -o -name "*.apk" \) -exec sha256sum '{}' +
         working-directory: reproducible-builds
 
-      - name: Upload APKs
+      - name: Upload APKs (artifact)
         uses: actions/upload-artifact@v7
         with:
           name: apk
           path: reproducible-builds/outputs/apk/*/release/*.apk
           if-no-files-found: error
 
-      - name: Upload Bundles
+      - name: Upload Bundles (artifact)
         uses: actions/upload-artifact@v7
         with:
           name: bundle
           path: reproducible-builds/outputs/bundle/*Release/*.aab
-          if-no-files-found: error
+          if-no-files-found: warn
 
-  prepare_release:
-    name: Prepare release
-    if: "github.event.base_ref != 'refs/heads/upstream-main'"
-    runs-on: ubuntu-24.04
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: "${{ env.TAG_REF }}"
-
-      - name: Check if release exists
-        id: check_release
+      - name: Compute release metadata
+        id: metadata
         run: |
-          if gh release view "$TAG_REF"; then
-            echo "release_exists=true" >> $GITHUB_OUTPUT
+          # Resolve a version label from the provided input or the source.
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           else
-            echo "release_exists=false" >> $GITHUB_OUTPUT
+            echo "version=$(git describe --tags --always 2>/dev/null || echo dev)" >> "$GITHUB_OUTPUT"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "tag=custom" >> "$GITHUB_OUTPUT"
 
-      - name: Create release draft
-        if: "steps.check_release.outputs.release_exists == 'false'"
-        run: gh release create -d --verify-tag -t "$TAG_REF" "$TAG_REF"
-        env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_PAT || secrets.GITHUB_TOKEN }}
-
-  upload:
-    name: Upload
-    runs-on: ubuntu-24.04
-    needs:
-      - build
-      - prepare_release
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: "${{ env.TAG_REF }}"
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Check version for upgrade compatibility
+      - name: Create or update GitHub release
         run: |
-          echo "Listing latest APKs"
-          gh release list --exclude-drafts --limit 10
-          gh release download --pattern '*.apk' --dir latest || exit 0
-          latest_apks=(latest/*.apk)
-          build_apks=(apk/*/release/*.apk)
-          aapt=($ANDROID_HOME/build-tools/*/aapt)
-          version_code() {
-            $aapt d badging "$1" | gawk 'match($0, /^package:.*versionCode=.([0-9]+)/, v) {print v[1]}'
-          }
-          echo "Using aapt: $aapt"
-          latest_version_code=$(version_code "$latest_apks")
-          build_version_code=$(version_code "$build_apks")
-          echo "Latest version code: $latest_version_code"
-          echo "Build version code: $build_version_code"
-          if [ "$build_version_code" -le "$latest_version_code" ]; then
-            echo "Build version code must be greater than the latest version code" >&2
-            exit 1
-          fi
+          TAG="${{ steps.metadata.outputs.tag }}"
+          VER="${{ steps.metadata.outputs.version }}"
+          gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes || true
+          # Create the release first, then attach the APK/AAB assets by glob.
+          gh release create "$TAG" \
+            --title "Custom build — $VER" \
+            --notes "Automated custom-fork build of \`${{ env.REF }}\` (MollyIM + private patches). Signed: ${{ env.HAVE_KEYSTORE }}."
+          gh release upload "$TAG" reproducible-builds/outputs/apk/*/release/*.apk --clobber \
+            || echo "warning: no APK matched the upload glob"
+          gh release upload "$TAG" reproducible-builds/outputs/bundle/*Release/*.aab --clobber \
+            || echo "warning: no AAB matched the upload glob"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload APKs to GitHub release
-        run: gh release upload "$TAG_REF" ./apk/*/release/*.apk --clobber
-        env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_PAT || secrets.GITHUB_TOKEN }}
+      - name: Publish app version output
+        id: version
+        run: echo "version=${{ steps.metadata.outputs.version }}" >> "$GITHUB_OUTPUT"

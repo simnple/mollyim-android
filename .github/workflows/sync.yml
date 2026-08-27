@@ -1,36 +1,91 @@
-name: Sync Upstream
+# Custom-fork maintenance workflow.
+#
+# 1. Keeps `main` in sync with upstream mollyim/mollyim-android (`main` is a pure
+#    mirror of upstream — this fork's private changes live on `custom`).
+# 2. Rebase the `custom` patch branch onto the freshly synced `main`, and if the
+#    rebase succeeded and produced new commits, build the signed APK via the
+#    release workflow.
+#
+# The `custom` branch carries the private patches (build-expiry disable,
+# view-once / delete-for-everyone retention). Reapplying them onto each new
+# MollyIM release keeps the fork current. If an upstream change conflicts with a
+# patch, the rebase is aborted (the branch stays at the last-known-good commit)
+# and this run fails so you notice and can fix the conflict.
+
+name: Sync upstream and rebase custom
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 3 * * *' # daily at 03:00 UTC
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   sync:
-    name: Sync
+    name: Sync and rebase
     runs-on: ubuntu-24.04
+    outputs:
+      rebased: ${{ steps.rebase.outputs.rebase_result }}
+      had_updates: ${{ steps.rebase.outputs.had_updates }}
 
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: upstream-main
+          ref: main
           fetch-depth: 0
-          lfs: true
           persist-credentials: false
 
       - run: gh auth setup-git
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: git remote add upstream https://github.com/signalapp/Signal-Android.git
-      - run: git pull --ff-only upstream main
+      - name: Fetch upstream MollyIM
+        run: |
+          git remote add upstream https://github.com/mollyim/mollyim-android.git
+          git fetch --tags --no-prune upstream main
         env:
           GIT_LFS_SKIP_SMUDGE: 1
 
-      - run: git lfs fetch --all upstream
-      - run: git push origin upstream-main
+      - name: Align main to upstream
+        run: |
+          git checkout main
+          git reset --hard upstream/main
+          git push --force-with-lease origin main
         env:
-          GH_TOKEN: ${{ secrets.SYNC_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rebase custom onto updated main
+        id: rebase
+        run: |
+          # Ensure the custom branch exists (it lives on origin).
+          git fetch origin custom || true
+          git checkout -B custom origin/custom || git checkout -b custom
+
+          before=$(git rev-parse origin/custom)
+          if git rebase main; then
+            after=$(git rev-parse HEAD)
+            git push --force-with-lease origin custom
+            echo "rebase_result=ok" >> "$GITHUB_OUTPUT"
+            if [ "$before" = "$after" ]; then
+              echo "had_updates=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "had_updates=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "rebase_result=conflict" >> "$GITHUB_OUTPUT"
+            git rebase --abort
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build signed APK
+    needs: sync
+    if: needs.sync.outputs.had_updates == 'true'
+    uses: ./.github/workflows/release.yml
+    with:
+      ref: custom
+    secrets: inherit
