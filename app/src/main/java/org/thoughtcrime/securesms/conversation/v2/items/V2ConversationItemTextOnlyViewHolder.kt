@@ -274,7 +274,6 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
     presentBody()
     presentDate()
     presentDeliveryStatus()
-    presentReadAvatars()
     presentFooterBackground()
     presentFooterPinned()
     presentFooterStarred()
