@@ -9799,13 +9799,13 @@
 
     <string name="ConversationSettingsFragment__force_disappearing_messages">강제 자동 삭제 메시지</string>
     <string name="ConversationSettingsFragment__message_timestamp_spoof">메시지 전송 시간</string>
-    <string name="ExpiryDialog__title">보낸 메시지 만료기간 설정</string>
+    <string name="ExpiryDialog__title">강제 자동 삭제 메시지</string>
     <string name="ExpiryDialog__follow_room">이 채팅의 타이머 따르기 (기본)</string>
     <string name="ExpiryDialog__custom">직접 입력…</string>
     <string name="ExpiryDialog__cancel">취소</string>
     <string name="ExpiryDialog__toast_off">만료기간 위조 끔 — 채팅 타이머 사용</string>
     <string name="ExpiryDialog__toast_on">만료기간 위조 켬 (%1$s)</string>
-    <string name="TimestampDialog__title">이전 시각으로 보내기</string>
+    <string name="TimestampDialog__title">메시지 전송 시간</string>
     <string name="TimestampDialog__off">실제 시각으로 보내기 (끄기)</string>
     <string name="TimestampDialog__1_min">1분 전</string>
     <string name="TimestampDialog__5_min">5분 전</string>

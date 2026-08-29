@@ -10008,13 +10008,13 @@
 
     <string name="ConversationSettingsFragment__force_disappearing_messages">Force auto-delete message</string>
     <string name="ConversationSettingsFragment__message_timestamp_spoof">Message send time</string>
-    <string name="ExpiryDialog__title">Custom message expiry</string>
+    <string name="ExpiryDialog__title">Force auto-delete message</string>
     <string name="ExpiryDialog__follow_room">Use this chat\'s timer (default)</string>
     <string name="ExpiryDialog__custom">Custom…</string>
     <string name="ExpiryDialog__cancel">Cancel</string>
     <string name="ExpiryDialog__toast_off">Expiry spoof off — using chat\'s timer</string>
     <string name="ExpiryDialog__toast_on">Expiry spoof on (%1$s)</string>
-    <string name="TimestampDialog__title">Send as if it were earlier</string>
+    <string name="TimestampDialog__title">Message send time</string>
     <string name="TimestampDialog__off">Send at real time (off)</string>
     <string name="TimestampDialog__1_min">1 minute earlier</string>
     <string name="TimestampDialog__5_min">5 minutes earlier</string>
