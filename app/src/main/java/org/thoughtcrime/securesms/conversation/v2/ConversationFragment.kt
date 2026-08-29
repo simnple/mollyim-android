@@ -2517,8 +2517,8 @@ class ConversationFragment :
     )
   }
 
-  private fun sendPoll(recipient: Recipient, poll: Poll) {
-    val send = viewModel.sendPoll(recipient, poll)
+  private fun sendPoll(recipient: Recipient, poll: Poll, quote: QuoteModel? = null) {
+    val send = viewModel.sendPoll(recipient, poll, quote)
 
     disposables += send
       .subscribeBy(
@@ -4542,7 +4542,7 @@ class ConversationFragment :
         } else {
           val question = pollQuestionInput.text.toString()
           val options = pollOptionsInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
-          viewModel.recipientSnapshot?.let { sendPoll(it, Poll(question, false, options)) }
+          viewModel.recipientSnapshot?.let { sendPoll(it, Poll(question, false, options), replyQuote) }
         }
         sent++
         updateProgress()

@@ -186,7 +186,7 @@ class ConversationRepository(
     }.subscribeOn(Schedulers.io())
   }
 
-  fun sendPoll(threadRecipient: Recipient, poll: Poll): Completable {
+  fun sendPoll(threadRecipient: Recipient, poll: Poll, quote: QuoteModel? = null): Completable {
     return Completable.create { emitter ->
 
       val threadId = SignalDatabase.threads.getOrCreateThreadIdFor(threadRecipient)
@@ -195,7 +195,8 @@ class ConversationRepository(
         sentTimeMillis = System.currentTimeMillis(),
         expiresIn = threadRecipient.expiresInSeconds.seconds.inWholeMilliseconds,
         poll = poll.copy(authorId = Recipient.self().id.toLong()),
-        question = poll.question
+        question = poll.question,
+        quote = quote
       )
 
       Log.i(TAG, "Sending poll create to " + message.threadRecipient.id + ", thread: " + threadId)

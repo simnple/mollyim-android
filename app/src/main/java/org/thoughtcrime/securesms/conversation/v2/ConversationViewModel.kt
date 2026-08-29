@@ -581,9 +581,9 @@ class ConversationViewModel(
     return reactions.firstOrNull { it.author == Recipient.self().id }
   }
 
-  fun sendPoll(threadRecipient: Recipient, poll: Poll): Completable {
+  fun sendPoll(threadRecipient: Recipient, poll: Poll, quote: QuoteModel? = null): Completable {
     return repository
-      .sendPoll(threadRecipient, poll)
+      .sendPoll(threadRecipient, poll, quote)
       .observeOn(AndroidSchedulers.mainThread())
   }
 

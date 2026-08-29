@@ -459,13 +459,14 @@ data class OutgoingMessage(
     }
 
     @JvmStatic
-    fun pollMessage(threadRecipient: Recipient, sentTimeMillis: Long, expiresIn: Long, poll: Poll, question: String = ""): OutgoingMessage {
+    fun pollMessage(threadRecipient: Recipient, sentTimeMillis: Long, expiresIn: Long, poll: Poll, question: String = "", quote: QuoteModel? = null): OutgoingMessage {
       return OutgoingMessage(
         threadRecipient = threadRecipient,
         sentTimeMillis = sentTimeMillis,
         expiresIn = expiresIn,
         poll = poll,
         body = question,
+        outgoingQuote = quote,
         isUrgent = true,
         isSecure = true
       )
