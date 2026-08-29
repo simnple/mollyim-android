@@ -43,10 +43,13 @@ import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
@@ -4410,54 +4413,184 @@ class ConversationFragment :
       }
 
       val density = resources.displayMetrics.density
-      val countInput = EditText(requireContext()).apply {
-        isSingleLine = true
+      val pad = (16 * density).toInt()
+
+      fun editText(hintRes: Int, inputType: Int = InputType.TYPE_TEXT_FLAG_CAP_SENTENCES): EditText {
+        return EditText(requireContext()).apply {
+          isSingleLine = true
+          setHint(hintRes)
+          setPadding(pad, (8 * density).toInt() / 2, pad, (8 * density).toInt() / 2)
+        }
+      }
+
+      val countInput = editText(R.string.SpamDialog__count_hint, InputType.TYPE_CLASS_NUMBER).apply {
         inputType = InputType.TYPE_CLASS_NUMBER
-        hint = getString(R.string.SpamDialog__count_hint)
       }
-      val delayInput = EditText(requireContext()).apply {
-        isSingleLine = true
+      val delayInput = editText(R.string.SpamDialog__delay_hint, InputType.TYPE_CLASS_NUMBER).apply {
         inputType = InputType.TYPE_CLASS_NUMBER
-        hint = getString(R.string.SpamDialog__delay_hint)
       }
-      val bodyInput = EditText(requireContext()).apply {
-        isSingleLine = true
-        hint = getString(R.string.SpamDialog__message_hint)
+
+      val textInput = editText(R.string.SpamDialog__message_hint)
+      val pollQuestionInput = editText(R.string.SpamDialog__poll_question_hint)
+      val pollOptionsInput = editText(R.string.SpamDialog__poll_options_hint)
+
+      val textBlock = LinearLayout(requireContext()).apply {
+        orientation = LinearLayout.VERTICAL
+        addView(textInput)
       }
+      val pollBlock = LinearLayout(requireContext()).apply {
+        orientation = LinearLayout.VERTICAL
+        addView(pollQuestionInput)
+        addView(pollOptionsInput)
+        visibility = View.GONE
+      }
+
+      val textTypeId = View.generateViewId()
+      val pollTypeId = View.generateViewId()
+      val typeGroup = RadioGroup(requireContext()).apply {
+        orientation = RadioGroup.HORIZONTAL
+        addView(RadioButton(requireContext()).apply { id = textTypeId; text = getString(R.string.SpamDialog__type_text); isChecked = true })
+        addView(RadioButton(requireContext()).apply { id = pollTypeId; text = getString(R.string.SpamDialog__type_poll) })
+        setOnCheckedChangeListener { _, checkedId ->
+          val isText = checkedId == textTypeId
+          textBlock.visibility = if (isText) View.VISIBLE else View.GONE
+          pollBlock.visibility = if (isText) View.GONE else View.VISIBLE
+        }
+      }
+
+      val progressText = TextView(requireContext()).apply {
+        text = getString(R.string.SpamDialog__progress_empty)
+        setPadding(pad, (4 * density).toInt(), pad, (4 * density).toInt())
+      }
+
+      val startButton = Button(requireContext())
+      val stopButton = Button(requireContext()).apply {
+        text = getString(R.string.SpamDialog__stop)
+      }
+
+      val buttonRow = LinearLayout(requireContext()).apply {
+        orientation = LinearLayout.HORIZONTAL
+        addView(startButton, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        addView(stopButton, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+      }
+
       val container = LinearLayout(requireContext()).apply {
         orientation = LinearLayout.VERTICAL
-        val pad = (16 * density).toInt()
         setPadding(pad, 0, pad, 0)
+        addView(typeGroup)
         addView(countInput)
         addView(delayInput)
-        addView(bodyInput)
+        addView(textBlock)
+        addView(pollBlock)
+        addView(progressText)
+        addView(buttonRow)
       }
+
+      val handler = Handler(Looper.getMainLooper())
+      var count = 0
+      var delay = 0L
+      var sent = 0
+      var playing = false
+      var running: Runnable? = null
+      var isTextMode = true
+
+      fun updateProgress() {
+        progressText.text = getString(R.string.SpamDialog__progress, sent, count)
+      }
+
+      fun updateButtons() {
+        startButton.text = getString(if (playing) R.string.SpamDialog__pause else R.string.SpamDialog__start)
+        stopButton.isEnabled = playing
+      }
+
+      fun stop(reset: Boolean) {
+        playing = false
+        running?.let { handler.removeCallbacks(it) }
+        running = null
+        if (reset) sent = 0
+        updateButtons()
+        updateProgress()
+      }
+
+      fun tick() {
+        if (!playing || sent >= count) {
+          playing = false
+          updateButtons()
+          return
+        }
+        if (isTextMode) {
+          sendMessage(body = textInput.text.toString(), clearCompose = false)
+        } else {
+          val question = pollQuestionInput.text.toString()
+          val options = pollOptionsInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
+          viewModel.recipientSnapshot?.let { sendPoll(it, Poll(question, false, options)) }
+        }
+        sent++
+        updateProgress()
+        if (sent < count) {
+          running = Runnable { tick() }
+          handler.postDelayed(running!!, delay)
+        } else {
+          playing = false
+          updateButtons()
+        }
+      }
+
+      fun schedule() {
+        running = Runnable { tick() }
+        handler.post(running!!)
+      }
+
+      fun resume() {
+        playing = true
+        updateButtons()
+        schedule()
+      }
+
+      val onStart = label@{
+        count = countInput.text.toString().toIntOrNull()
+        delay = delayInput.text.toString().toLongOrNull() ?: 0L
+        if (count == null || count < 1 || count > 200 || delay < 0) {
+          toast(R.string.SpamDialog__invalid_count)
+          return@label
+        }
+
+        isTextMode = typeGroup.checkedRadioButtonId == textTypeId
+        if (isTextMode && textInput.text.toString().isBlank()) {
+          toast(R.string.SpamDialog__invalid_message)
+          return@label
+        }
+        if (!isTextMode) {
+          val question = pollQuestionInput.text.toString()
+          val options = pollOptionsInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
+          if (question.isBlank() || options.size < 2) {
+            toast(R.string.SpamDialog__invalid_poll)
+            return@label
+          }
+        }
+
+        sent = 0
+        playing = true
+        updateButtons()
+        schedule()
+      }
+
+      startButton.setOnClickListener {
+        when {
+          playing -> stop(reset = false)
+          sent == 0 || sent >= count -> onStart()
+          else -> resume()
+        }
+      }
+      stopButton.setOnClickListener { stop(reset = true) }
+
+      updateButtons()
+      updateProgress()
 
       MaterialAlertDialogBuilder(requireContext())
         .setTitle(R.string.SpamDialog__title)
         .setView(container)
-        .setPositiveButton(R.string.SpamDialog__send) { _, _ ->
-          val count = countInput.text.toString().toIntOrNull()
-          val delay = delayInput.text.toString().toIntOrNull() ?: 0
-          if (count == null || count < 1 || count > 200 || delay < 0) {
-            toast(R.string.SpamDialog__invalid_count)
-            return@setPositiveButton
-          }
-          val message = bodyInput.text.toString()
-          val handler = Handler(Looper.getMainLooper())
-          var sent = 0
-          fun next() {
-            if (sent >= count) return
-            sendMessage(body = message, clearCompose = false)
-            sent++
-            if (sent < count) {
-              if (delay > 0) handler.postDelayed(Runnable { next() }, delay.toLong())
-              else next()
-            }
-          }
-          next()
-        }
-        .setNegativeButton(R.string.SpamDialog__cancel, null)
+        .setNegativeButton(R.string.SpamDialog__cancel) { _, _ -> stop(reset = true) }
         .show()
     }
 

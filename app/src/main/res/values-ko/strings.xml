@@ -9772,6 +9772,17 @@
     <string name="SpamDialog__send">보내기</string>
     <string name="SpamDialog__cancel">취소</string>
     <string name="SpamDialog__invalid_count">유효한 개수를 입력하세요.</string>
+    <string name="SpamDialog__type_text">텍스트/이모지</string>
+    <string name="SpamDialog__type_poll">투표</string>
+    <string name="SpamDialog__poll_question_hint">투표 질문</string>
+    <string name="SpamDialog__poll_options_hint">옵션 (쉼표로 구분)</string>
+    <string name="SpamDialog__progress_empty">시작 전</string>
+    <string name="SpamDialog__progress">보냄: %1$d / %2$d</string>
+    <string name="SpamDialog__start">시작</string>
+    <string name="SpamDialog__pause">일시정지</string>
+    <string name="SpamDialog__stop">중지</string>
+    <string name="SpamDialog__invalid_message">보낼 메시지를 입력하세요.</string>
+    <string name="SpamDialog__invalid_poll">질문과 옵션 2개 이상을 입력하세요.</string>
     <string name="conversation__menu_delete_all_my_messages">내 메시지 모두 삭제</string>
     <string name="DeleteAllMyMessages__title">내 메시지 모두 삭제</string>
     <string name="DeleteAllMyMessages__body">이 대화에서 내가 보낸 모든 메시지를 모두에게서 삭제합니다. 되돌릴 수 없습니다.</string>
