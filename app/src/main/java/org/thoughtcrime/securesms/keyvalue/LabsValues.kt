@@ -27,7 +27,7 @@ class LabsValues internal constructor(store: KeyValueStore) : SignalStoreValues(
 
   var starredMessages by booleanValue(STARRED_MESSAGES, true).falseForExternalUsers()
 
-  var stickerReplies by booleanValue(STICKER_REPLIES, false).falseForExternalUsers()
+  var stickerReplies by booleanValue(STICKER_REPLIES, false)
 
   var muteBreakthroughNotifications by booleanValue(MUTE_BREAKTHROUGH_NOTIFICATIONS, true).falseForExternalUsers()
 
