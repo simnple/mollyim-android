@@ -43,6 +43,10 @@
         android:checkable="true" />
 
     <item
+        android:id="@+id/menu_expiry_spoof"
+        android:title="@string/conversation__menu_expiry_spoof" />
+
+    <item
         android:id="@+id/menu_format_text_submenu"
         android:title="@string/conversation__menu_format_text"
         android:orderInCategory="9999">

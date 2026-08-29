@@ -9780,5 +9780,14 @@
     <string name="Echo__toast_on">이 채팅에서 남 따라하기 켬</string>
     <string name="Echo__toast_off">이 채팅에서 남 따라하기 끔</string>
 
+    <string name="conversation__menu_expiry_spoof">보낸 메시지 만료기간 위조…</string>
+    <string name="conversation__menu_expiry_spoof_active">만료기간 위조 켬 (%1$s)</string>
+    <string name="ExpiryDialog__title">보낸 메시지 만료기간 설정</string>
+    <string name="ExpiryDialog__follow_room">이 채팅의 타이머 따르기 (기본)</string>
+    <string name="ExpiryDialog__custom">직접 입력…</string>
+    <string name="ExpiryDialog__cancel">취소</string>
+    <string name="ExpiryDialog__toast_off">만료기간 위조 끔 — 채팅 타이머 사용</string>
+    <string name="ExpiryDialog__toast_on">만료기간 위조 켬 (%1$s)</string>
+
     <!-- EOF -->
 </resources>

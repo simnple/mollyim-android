@@ -9990,5 +9990,14 @@
     <string name="Echo__toast_on">Echo enabled in this chat</string>
     <string name="Echo__toast_off">Echo disabled in this chat</string>
 
+    <string name="conversation__menu_expiry_spoof">Spoof message expiry…</string>
+    <string name="conversation__menu_expiry_spoof_active">Expiry spoof on (%1$s)</string>
+    <string name="ExpiryDialog__title">Custom message expiry</string>
+    <string name="ExpiryDialog__follow_room">Use this chat\'s timer (default)</string>
+    <string name="ExpiryDialog__custom">Custom…</string>
+    <string name="ExpiryDialog__cancel">Cancel</string>
+    <string name="ExpiryDialog__toast_off">Expiry spoof off — using chat\'s timer</string>
+    <string name="ExpiryDialog__toast_on">Expiry spoof on (%1$s)</string>
+
     <!-- EOF -->
 </resources>

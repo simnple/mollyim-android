@@ -156,6 +156,11 @@ public class TextSecurePreferences {
   // Custom fork: optionally keep / show messages from explicitly blocked senders
   private static final String SHOW_BLOCKED_MESSAGES = "pref_show_blocked_messages";
 
+  // Custom fork: per-thread outgoing expiry ("만료기간") override. Overrides the disappearing-message
+  // duration used on the wire for messages sent in a given thread. A missing entry means "follow the
+  // room's timer" (the real conversation expiry is used). Stored as comma-separated "threadId=seconds".
+  private static final String EXPIRY_OVERRIDE_SECONDS = "pref_expiry_override_seconds";
+
   public static final String LINK_PREVIEWS = "pref_link_previews";
 
   private static final String MEDIA_KEYBOARD_MODE = "pref_media_keyboard_mode";
@@ -620,6 +625,59 @@ public class TextSecurePreferences {
       ids.remove(String.valueOf(threadId));
     }
     setStringPreference(context, ECHO_ENABLED, String.join(",", ids));
+  }
+
+  // Custom fork: message expiry override.
+  // EXPIRY_OVERRIDE_UNSET (< 0) means "no override" — use the conversation's own timer.
+  public static final int EXPIRY_OVERRIDE_UNSET = -1;
+
+  // Custom fork: returns the configured expiry override (seconds) for a thread, or
+  // EXPIRY_OVERRIDE_UNSET if the conversation should use its own timer.
+  public static int getExpiryOverrideSecondsForThread(@NonNull Context context, long threadId) {
+    String raw = getStringPreference(context, EXPIRY_OVERRIDE_SECONDS, "");
+    if (raw == null || raw.isEmpty()) return EXPIRY_OVERRIDE_UNSET;
+    for (String part : raw.split(",")) {
+      if (part == null) continue;
+      int eq = part.indexOf('=');
+      if (eq < 0) continue;
+      String id = part.substring(0, eq).trim();
+      String off = part.substring(eq + 1).trim();
+      if (id.equals(String.valueOf(threadId))) {
+        try {
+          return Integer.parseInt(off);
+        } catch (NumberFormatException ignored) {
+          return EXPIRY_OVERRIDE_UNSET;
+        }
+      }
+    }
+    return EXPIRY_OVERRIDE_UNSET;
+  }
+
+  // Custom fork: sets the expiry override (seconds) for a thread. Pass EXPIRY_OVERRIDE_UNSET to
+  // clear the override and fall back to the conversation's own timer.
+  public static void setExpiryOverrideSecondsForThread(@NonNull Context context, long threadId, int seconds) {
+    String raw = getStringPreference(context, EXPIRY_OVERRIDE_SECONDS, "");
+    java.util.LinkedHashMap<String, String> map = new java.util.LinkedHashMap<>();
+    if (raw != null && !raw.isEmpty()) {
+      for (String part : raw.split(",")) {
+        if (part == null) continue;
+        int eq = part.indexOf('=');
+        if (eq < 0) continue;
+        String id = part.substring(0, eq).trim();
+        String off = part.substring(eq + 1).trim();
+        if (!id.isEmpty()) map.put(id, off);
+      }
+    }
+    if (seconds == EXPIRY_OVERRIDE_UNSET) {
+      map.remove(String.valueOf(threadId));
+    } else {
+      map.put(String.valueOf(threadId), String.valueOf(seconds));
+    }
+    java.util.List<String> pairs = new java.util.ArrayList<>();
+    for (java.util.Map.Entry<String, String> e : map.entrySet()) {
+      pairs.add(e.getKey() + "=" + e.getValue());
+    }
+    setStringPreference(context, EXPIRY_OVERRIDE_SECONDS, String.join(",", pairs));
   }
 
   // Custom fork

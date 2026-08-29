@@ -459,6 +459,14 @@ class ConversationRepository(
     return outgoingMessage
   }
 
+  // Custom fork: per-thread outgoing expiry override. Returns the expiry (seconds) to put on the wire
+  // for a message sent in this conversation. A configured override wins; otherwise (EXPIRY_OVERRIDE_UNSET)
+  // we fall back to the conversation's own timer.
+  private fun applyExpiryOverrideSeconds(threadId: Long, roomSeconds: Int): Int {
+    val override = TextSecurePreferences.getExpiryOverrideSecondsForThread(AppDependencies.application, threadId)
+    return if (override == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) roomSeconds else override
+  }
+
   fun sendMessage(
     threadId: Long,
     threadRecipient: Recipient,
@@ -491,7 +499,7 @@ class ConversationRepository(
         threadRecipient = threadRecipient,
         sentTimeMillis = System.currentTimeMillis(),
         body = if (slideDeck != null) OutgoingMessage.buildMessage(slideDeck, splitMessage.body) else splitMessage.body,
-        expiresIn = threadRecipient.expiresInSeconds.seconds.inWholeMilliseconds,
+        expiresIn = applyExpiryOverrideSeconds(threadId, threadRecipient.expiresInSeconds) * 1000L,
         isUrgent = true,
         isSecure = true,
         bodyRanges = bodyRanges,

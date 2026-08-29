@@ -35,6 +35,7 @@ import android.text.InputType
 import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.Menu
+import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
@@ -173,6 +174,7 @@ import org.thoughtcrime.securesms.components.mention.MentionAnnotation
 import org.thoughtcrime.securesms.components.menu.ActionItem
 import org.thoughtcrime.securesms.components.menu.SignalBottomActionBar
 import org.thoughtcrime.securesms.components.settings.app.AppSettingsActivity
+import org.thoughtcrime.securesms.components.settings.app.privacy.expire.CustomExpireTimerSelectorView
 import org.thoughtcrime.securesms.components.snackbars.makeSnackbar
 import org.thoughtcrime.securesms.components.spoiler.SpoilerAnnotation
 import org.thoughtcrime.securesms.components.voice.VoiceNoteDraft
@@ -356,6 +358,7 @@ import org.thoughtcrime.securesms.util.DateUtils.is24HourFormat
 import org.thoughtcrime.securesms.util.DeleteDialog
 import org.thoughtcrime.securesms.util.Dialogs
 import org.thoughtcrime.securesms.util.DoubleClickDebouncer
+import org.thoughtcrime.securesms.util.ExpirationUtil
 import org.thoughtcrime.securesms.util.FileProviderUtil
 import org.thoughtcrime.securesms.util.FullscreenHelper
 import org.thoughtcrime.securesms.util.MediaUtil
@@ -4514,6 +4517,94 @@ class ConversationFragment :
       TextSecurePreferences.setEchoEnabledForThread(requireContext(), threadId, newState)
       toast(if (newState) R.string.Echo__toast_on else R.string.Echo__toast_off)
       requireActivity().invalidateOptionsMenu()
+    }
+
+    override fun handleExpirySpoof() {
+      val threadId = args.threadId
+      val current = TextSecurePreferences.getExpiryOverrideSecondsForThread(requireContext(), threadId)
+
+      val labels = arrayOf(
+        getString(R.string.ExpiryDialog__follow_room),
+        getString(R.string.ExpireTimerSettingsFragment__off),
+        getString(R.string.ExpireTimerSettingsFragment__30_seconds),
+        getString(R.string.ExpireTimerSettingsFragment__5_minutes),
+        getString(R.string.ExpireTimerSettingsFragment__1_hour),
+        getString(R.string.ExpireTimerSettingsFragment__8_hours),
+        getString(R.string.ExpireTimerSettingsFragment__1_day),
+        getString(R.string.ExpireTimerSettingsFragment__1_week),
+        getString(R.string.ExpireTimerSettingsFragment__4_weeks),
+        getString(R.string.ExpiryDialog__custom)
+      )
+      val seconds = intArrayOf(
+        TextSecurePreferences.EXPIRY_OVERRIDE_UNSET,
+        0,
+        30,
+        300,
+        3600,
+        28800,
+        86400,
+        604800,
+        2419200
+      )
+      val customIndex = seconds.size
+
+      val checked = if (current == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
+        0
+      } else {
+        var matchIndex = -1
+        for (i in seconds.indices) {
+          if (seconds[i] == current) matchIndex = i
+        }
+        if (matchIndex >= 0) matchIndex else customIndex
+      }
+
+      MaterialAlertDialogBuilder(requireContext())
+        .setTitle(R.string.ExpiryDialog__title)
+        .setSingleChoiceItems(labels, checked) { dialog, which ->
+          if (which == customIndex) {
+            dialog.dismiss()
+            showCustomExpiryInput(threadId)
+            return@setSingleChoiceItems
+          }
+          val value = seconds[which]
+          TextSecurePreferences.setExpiryOverrideSecondsForThread(requireContext(), threadId, value)
+          val message = if (value == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
+            getString(R.string.ExpiryDialog__toast_off)
+          } else {
+            getString(R.string.ExpiryDialog__toast_on, ExpirationUtil.getExpirationDisplayValue(requireContext(), value))
+          }
+          Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+          requireActivity().invalidateOptionsMenu()
+          dialog.dismiss()
+        }
+        .setNegativeButton(R.string.ExpiryDialog__cancel, null)
+        .show()
+    }
+
+    private fun showCustomExpiryInput(threadId: Long) {
+      val view = LayoutInflater.from(requireContext()).inflate(R.layout.custom_expire_timer_select_dialog, null, false)
+      val selector = view.findViewById<CustomExpireTimerSelectorView>(R.id.custom_expire_timer_select_dialog_selector)
+
+      val current = TextSecurePreferences.getExpiryOverrideSecondsForThread(requireContext(), threadId)
+      if (current != TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
+        selector.setTimer(current)
+      }
+
+      MaterialAlertDialogBuilder(requireContext())
+        .setTitle(R.string.ExpireTimerSettingsFragment__custom_time)
+        .setView(view)
+        .setPositiveButton(R.string.ExpireTimerSettingsFragment__set) { _, _ ->
+          val value = selector.getTimer()
+          TextSecurePreferences.setExpiryOverrideSecondsForThread(requireContext(), threadId, value)
+          Toast.makeText(
+            requireContext(),
+            getString(R.string.ExpiryDialog__toast_on, ExpirationUtil.getExpirationDisplayValue(requireContext(), value)),
+            Toast.LENGTH_SHORT
+          ).show()
+          requireActivity().invalidateOptionsMenu()
+        }
+        .setNegativeButton(R.string.ExpiryDialog__cancel, null)
+        .show()
     }
   }
 
