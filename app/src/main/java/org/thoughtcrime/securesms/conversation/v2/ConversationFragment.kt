@@ -4458,6 +4458,23 @@ class ConversationFragment :
         }
       }
 
+      val emojiRow = LinearLayout(requireContext()).apply {
+        orientation = LinearLayout.HORIZONTAL
+        listOf("😀", "😂", "❤️", "🔥", "👍", "🎉").forEach { emoji ->
+          addView(
+            Button(requireContext()).apply {
+              text = emoji
+              textSize = 18f
+              setOnClickListener {
+                val target = if (typeGroup.checkedRadioButtonId == textTypeId) textInput else pollQuestionInput
+                target.text.append(emoji)
+              }
+            },
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+          )
+        }
+      }
+
       val progressText = TextView(requireContext()).apply {
         text = getString(R.string.SpamDialog__progress_empty)
         setPadding(pad, (4 * density).toInt(), pad, (4 * density).toInt())
@@ -4482,6 +4499,7 @@ class ConversationFragment :
         addView(delayInput)
         addView(textBlock)
         addView(pollBlock)
+        addView(emojiRow)
         addView(progressText)
         addView(buttonRow)
       }
@@ -4493,6 +4511,7 @@ class ConversationFragment :
       var playing = false
       var running: Runnable? = null
       var isTextMode = true
+      var replyQuote: QuoteModel? = null
 
       fun updateProgress() {
         progressText.text = getString(R.string.SpamDialog__progress, sent, count)
@@ -4519,7 +4538,7 @@ class ConversationFragment :
           return
         }
         if (isTextMode) {
-          sendMessage(body = textInput.text.toString(), clearCompose = false)
+          sendMessage(body = textInput.text.toString(), quote = replyQuote, clearCompose = false)
         } else {
           val question = pollQuestionInput.text.toString()
           val options = pollOptionsInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
@@ -4569,6 +4588,7 @@ class ConversationFragment :
           }
         }
 
+        replyQuote = inputPanel.quote.orNull()
         sent = 0
         playing = true
         updateButtons()
