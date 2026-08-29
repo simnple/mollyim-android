@@ -439,21 +439,23 @@ private fun AppSettingsContent(
           )
         }
 
+        // Custom fork: the Labs entry is always visible so users can opt into
+        // experimental flags (e.g. sticker replies) regardless of build type.
+        item {
+          Dividers.Default()
+        }
+
+        item {
+          Rows.TextRow(
+            text = "Labs",
+            icon = painterResource(R.drawable.symbol_flash_24),
+            onClick = {
+              callbacks.navigate(AppSettingsRoute.LabsRoute.Labs)
+            }
+          )
+        }
+
         if (state.showInternalPreferences) {
-          item {
-            Dividers.Default()
-          }
-
-          item {
-            Rows.TextRow(
-              text = "Labs",
-              icon = painterResource(R.drawable.symbol_flash_24),
-              onClick = {
-                callbacks.navigate(AppSettingsRoute.LabsRoute.Labs)
-              }
-            )
-          }
-
           item {
             Rows.TextRow(
               text = stringResource(R.string.preferences__internal_preferences),

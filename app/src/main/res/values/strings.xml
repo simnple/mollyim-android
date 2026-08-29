@@ -9982,8 +9982,12 @@
     <string name="SpamDialog__send">Send</string>
     <string name="SpamDialog__cancel">Cancel</string>
     <string name="SpamDialog__invalid_count">Enter a valid number of copies.</string>
-    <string name="SpamDialog__type_text">Text/Emoji</string>
+    <string name="SpamDialog__type_text">Text</string>
+    <string name="SpamDialog__type_sticker">Sticker</string>
     <string name="SpamDialog__type_poll">Poll</string>
+    <string name="SpamDialog__pick_sticker">Pick sticker</string>
+    <string name="SpamDialog__sticker_none">No sticker selected</string>
+    <string name="SpamDialog__sticker_selected">Sticker: %1$s</string>
     <string name="SpamDialog__poll_question_hint">Poll question</string>
     <string name="SpamDialog__poll_options_hint">Options (comma separated)</string>
     <string name="SpamDialog__progress_empty">Not started</string>
@@ -9993,6 +9997,7 @@
     <string name="SpamDialog__stop">Stop</string>
     <string name="SpamDialog__invalid_message">Enter a message to send.</string>
     <string name="SpamDialog__invalid_poll">Enter a question and at least two options.</string>
+    <string name="SpamDialog__invalid_sticker">Pick a sticker to send.</string>
     <string name="conversation__menu_delete_all_my_messages">Delete all my messages</string>
     <string name="DeleteAllMyMessages__title">Delete all my messages</string>
     <string name="DeleteAllMyMessages__body">This will delete every message you sent in this chat for everyone. This cannot be undone.</string>

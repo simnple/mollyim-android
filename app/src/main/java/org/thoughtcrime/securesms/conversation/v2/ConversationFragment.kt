@@ -43,8 +43,6 @@ import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
-import android.widget.Button
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -91,10 +89,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.R as MaterialR
 import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.BaseTransientBottomBar.Duration
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.transition.platform.MaterialContainerTransformSharedElementCallback
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
@@ -991,7 +992,23 @@ class ConversationFragment :
     StickerSearchDialogFragment.show(childFragmentManager)
   }
 
+  private var spamSticker: StickerRecord? = null
+  private var spamStickerPicking = false
+  private var spamStickerLabel: TextView? = null
+
+  private fun openSpamStickerPicker(label: TextView) {
+    spamStickerPicking = true
+    spamStickerLabel = label
+    StickerSearchDialogFragment.show(childFragmentManager)
+  }
+
   override fun onStickerSelected(sticker: StickerRecord) {
+    if (spamStickerPicking) {
+      spamStickerPicking = false
+      spamSticker = sticker
+      spamStickerLabel?.text = getString(R.string.SpamDialog__sticker_selected, sticker.emoji.toString())
+      return
+    }
     sendSticker(
       stickerRecord = sticker,
       clearCompose = false
@@ -4415,63 +4432,71 @@ class ConversationFragment :
       val density = resources.displayMetrics.density
       val pad = (16 * density).toInt()
 
-      fun editText(hintRes: Int, inputType: Int = InputType.TYPE_TEXT_FLAG_CAP_SENTENCES): EditText {
-        return EditText(requireContext()).apply {
-          isSingleLine = true
-          setHint(hintRes)
-          setPadding(pad, (8 * density).toInt() / 2, pad, (8 * density).toInt() / 2)
+      fun textInputLayout(hintRes: Int, numeric: Boolean = false): Pair<TextInputLayout, TextInputEditText> {
+        val edit = TextInputEditText(requireContext()).apply {
+          if (numeric) inputType = InputType.TYPE_CLASS_NUMBER
+        }
+        val layout = TextInputLayout(requireContext()).apply {
+          hint = requireContext().getString(hintRes)
+          setPadding(pad, 0, pad, 0)
+          addView(edit)
+        }
+        return layout to edit
+      }
+
+      val (countLayout, countInput) = textInputLayout(R.string.SpamDialog__count_hint, numeric = true)
+      val (delayLayout, delayInput) = textInputLayout(R.string.SpamDialog__delay_hint, numeric = true)
+      val (textLayout, textInput) = textInputLayout(R.string.SpamDialog__message_hint)
+      val (pollQLayout, pollQuestionInput) = textInputLayout(R.string.SpamDialog__poll_question_hint)
+      val (pollOLayout, pollOptionsInput) = textInputLayout(R.string.SpamDialog__poll_options_hint)
+
+      val textTypeId = View.generateViewId()
+      val stickerTypeId = View.generateViewId()
+      val pollTypeId = View.generateViewId()
+
+      fun radioButton(hintRes: Int, id: Int, checked: Boolean): RadioButton {
+        return RadioButton(requireContext()).apply {
+          this.id = id
+          text = getString(hintRes)
+          isChecked = checked
         }
       }
-
-      val countInput = editText(R.string.SpamDialog__count_hint, InputType.TYPE_CLASS_NUMBER).apply {
-        inputType = InputType.TYPE_CLASS_NUMBER
-      }
-      val delayInput = editText(R.string.SpamDialog__delay_hint, InputType.TYPE_CLASS_NUMBER).apply {
-        inputType = InputType.TYPE_CLASS_NUMBER
-      }
-
-      val textInput = editText(R.string.SpamDialog__message_hint)
-      val pollQuestionInput = editText(R.string.SpamDialog__poll_question_hint)
-      val pollOptionsInput = editText(R.string.SpamDialog__poll_options_hint)
 
       val textBlock = LinearLayout(requireContext()).apply {
         orientation = LinearLayout.VERTICAL
-        addView(textInput)
+        addView(textLayout)
+      }
+      val stickerBlock = LinearLayout(requireContext()).apply {
+        orientation = LinearLayout.VERTICAL
+        visibility = View.GONE
+        val label = TextView(requireContext()).apply {
+          text = getString(R.string.SpamDialog__sticker_none)
+          setPadding(pad, (4 * density).toInt(), pad, (4 * density).toInt())
+        }
+        val pickButton = MaterialButton(requireContext()).apply {
+          text = getString(R.string.SpamDialog__pick_sticker)
+          setOnClickListener { openSpamStickerPicker(label) }
+        }
+        addView(pickButton)
+        addView(label)
+        spamStickerLabel = label
       }
       val pollBlock = LinearLayout(requireContext()).apply {
         orientation = LinearLayout.VERTICAL
-        addView(pollQuestionInput)
-        addView(pollOptionsInput)
         visibility = View.GONE
+        addView(pollQLayout)
+        addView(pollOLayout)
       }
 
-      val textTypeId = View.generateViewId()
-      val pollTypeId = View.generateViewId()
       val typeGroup = RadioGroup(requireContext()).apply {
         orientation = RadioGroup.HORIZONTAL
-        addView(RadioButton(requireContext()).apply { id = textTypeId; text = getString(R.string.SpamDialog__type_text); isChecked = true })
-        addView(RadioButton(requireContext()).apply { id = pollTypeId; text = getString(R.string.SpamDialog__type_poll) })
+        addView(radioButton(R.string.SpamDialog__type_text, textTypeId, true))
+        addView(radioButton(R.string.SpamDialog__type_sticker, stickerTypeId, false))
+        addView(radioButton(R.string.SpamDialog__type_poll, pollTypeId, false))
         setOnCheckedChangeListener { _, checkedId ->
-          val isText = checkedId == textTypeId
-          textBlock.visibility = if (isText) View.VISIBLE else View.GONE
-          pollBlock.visibility = if (isText) View.GONE else View.VISIBLE
-        }
-      }
-
-      val emojiRow = LinearLayout(requireContext()).apply {
-        orientation = LinearLayout.HORIZONTAL
-        listOf("😀", "😂", "❤️", "🔥", "👍", "🎉").forEach { emoji ->
-          addView(
-            Button(requireContext()).apply {
-              text = emoji
-              textSize = 18f
-              setOnClickListener {
-                val target = if (typeGroup.checkedRadioButtonId == textTypeId) textInput else pollQuestionInput
-                target.text.append(emoji)
-              }
-            },
-            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-          )
+          textBlock.visibility = if (checkedId == textTypeId) View.VISIBLE else View.GONE
+          stickerBlock.visibility = if (checkedId == stickerTypeId) View.VISIBLE else View.GONE
+          pollBlock.visibility = if (checkedId == pollTypeId) View.VISIBLE else View.GONE
         }
       }
 
@@ -4480,8 +4505,8 @@ class ConversationFragment :
         setPadding(pad, (4 * density).toInt(), pad, (4 * density).toInt())
       }
 
-      val startButton = Button(requireContext())
-      val stopButton = Button(requireContext()).apply {
+      val startButton = MaterialButton(requireContext())
+      val stopButton = MaterialButton(requireContext()).apply {
         text = getString(R.string.SpamDialog__stop)
       }
 
@@ -4495,11 +4520,11 @@ class ConversationFragment :
         orientation = LinearLayout.VERTICAL
         setPadding(pad, 0, pad, 0)
         addView(typeGroup)
-        addView(countInput)
-        addView(delayInput)
+        addView(countLayout)
+        addView(delayLayout)
         addView(textBlock)
+        addView(stickerBlock)
         addView(pollBlock)
-        addView(emojiRow)
         addView(progressText)
         addView(buttonRow)
       }
@@ -4510,7 +4535,6 @@ class ConversationFragment :
       var sent = 0
       var playing = false
       var running: Runnable? = null
-      var isTextMode = true
       var replyQuote: QuoteModel? = null
 
       fun updateProgress() {
@@ -4537,12 +4561,21 @@ class ConversationFragment :
           updateButtons()
           return
         }
-        if (isTextMode) {
-          sendMessage(body = textInput.text.toString(), quote = replyQuote, clearCompose = false)
-        } else {
-          val question = pollQuestionInput.text.toString()
-          val options = pollOptionsInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
-          viewModel.recipientSnapshot?.let { sendPoll(it, Poll(question, false, options), replyQuote) }
+        when (typeGroup.checkedRadioButtonId) {
+          textTypeId -> sendMessage(body = textInput.text.toString(), quote = replyQuote, clearCompose = false)
+
+          stickerTypeId -> {
+            val sticker = spamSticker
+            if (sticker != null) {
+              sendSticker(stickerRecord = sticker, clearCompose = false)
+            }
+          }
+
+          pollTypeId -> {
+            val question = pollQuestionInput.text.toString()
+            val options = pollOptionsInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            viewModel.recipientSnapshot?.let { sendPoll(it, Poll(question, false, options), replyQuote) }
+          }
         }
         sent++
         updateProgress()
@@ -4576,21 +4609,29 @@ class ConversationFragment :
         count = parsedCount
         delay = parsedDelay
 
-        isTextMode = typeGroup.checkedRadioButtonId == textTypeId
-        if (isTextMode && textInput.text.toString().isBlank()) {
-          toast(R.string.SpamDialog__invalid_message)
-          return@label
-        }
-        if (!isTextMode) {
-          val question = pollQuestionInput.text.toString()
-          val options = pollOptionsInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
-          if (question.isBlank() || options.size < 2) {
-            toast(R.string.SpamDialog__invalid_poll)
+        replyQuote = inputPanel.quote.orNull()
+
+        when (typeGroup.checkedRadioButtonId) {
+          textTypeId -> if (textInput.text?.toString().isNullOrBlank()) {
+            toast(R.string.SpamDialog__invalid_message)
             return@label
+          }
+
+          stickerTypeId -> if (spamSticker == null) {
+            toast(R.string.SpamDialog__invalid_sticker)
+            return@label
+          }
+
+          pollTypeId -> {
+            val question = pollQuestionInput.text.toString()
+            val options = pollOptionsInput.text.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            if (question.isBlank() || options.size < 2) {
+              toast(R.string.SpamDialog__invalid_poll)
+              return@label
+            }
           }
         }
 
-        replyQuote = inputPanel.quote.orNull()
         sent = 0
         playing = true
         updateButtons()
@@ -4612,7 +4653,11 @@ class ConversationFragment :
       MaterialAlertDialogBuilder(requireContext())
         .setTitle(R.string.SpamDialog__title)
         .setView(container)
-        .setNegativeButton(R.string.SpamDialog__cancel) { _, _ -> stop(reset = true) }
+        .setNegativeButton(R.string.SpamDialog__cancel) { _, _ ->
+          stop(reset = true)
+          spamStickerPicking = false
+          spamStickerLabel = null
+        }
         .show()
     }
 
