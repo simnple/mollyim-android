@@ -4567,12 +4567,14 @@ class ConversationFragment :
       }
 
       val onStart = label@{
-        count = countInput.text.toString().toIntOrNull()
-        delay = delayInput.text.toString().toLongOrNull() ?: 0L
-        if (count == null || count < 1 || count > 200 || delay < 0) {
+        val parsedCount = countInput.text.toString().toIntOrNull()
+        val parsedDelay = delayInput.text.toString().toLongOrNull() ?: 0L
+        if (parsedCount == null || parsedCount < 1 || parsedCount > 200 || parsedDelay < 0) {
           toast(R.string.SpamDialog__invalid_count)
           return@label
         }
+        count = parsedCount
+        delay = parsedDelay
 
         isTextMode = typeGroup.checkedRadioButtonId == textTypeId
         if (isTextMode && textInput.text.toString().isBlank()) {
