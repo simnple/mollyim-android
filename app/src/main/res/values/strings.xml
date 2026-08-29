@@ -9990,14 +9990,27 @@
     <string name="Echo__toast_on">Echo enabled in this chat</string>
     <string name="Echo__toast_off">Echo disabled in this chat</string>
 
-    <string name="conversation__menu_expiry_spoof">Spoof message expiry…</string>
-    <string name="conversation__menu_expiry_spoof_active">Expiry spoof on (%1$s)</string>
+    <string name="ConversationSettingsFragment__force_disappearing_messages">Force auto-delete message</string>
+    <string name="ConversationSettingsFragment__message_timestamp_spoof">Message send time</string>
     <string name="ExpiryDialog__title">Custom message expiry</string>
     <string name="ExpiryDialog__follow_room">Use this chat\'s timer (default)</string>
     <string name="ExpiryDialog__custom">Custom…</string>
     <string name="ExpiryDialog__cancel">Cancel</string>
     <string name="ExpiryDialog__toast_off">Expiry spoof off — using chat\'s timer</string>
     <string name="ExpiryDialog__toast_on">Expiry spoof on (%1$s)</string>
+    <string name="TimestampDialog__title">Send as if it were earlier</string>
+    <string name="TimestampDialog__off">Send at real time (off)</string>
+    <string name="TimestampDialog__1_min">1 minute earlier</string>
+    <string name="TimestampDialog__5_min">5 minutes earlier</string>
+    <string name="TimestampDialog__30_min">30 minutes earlier</string>
+    <string name="TimestampDialog__1_hr">1 hour earlier</string>
+    <string name="TimestampDialog__today_midnight">Earlier today (midnight)</string>
+    <string name="TimestampDialog__yesterday">Yesterday, same time</string>
+    <string name="TimestampDialog__3_days">3 days earlier</string>
+    <string name="TimestampDialog__custom">Custom date &amp; time…</string>
+    <string name="TimestampDialog__cancel">Cancel</string>
+    <string name="TimestampDialog__toast_off">Timestamp spoofing off</string>
+    <string name="TimestampDialog__toast_on">Timestamp spoofing on (%1$s)</string>
 
     <!-- EOF -->
 </resources>

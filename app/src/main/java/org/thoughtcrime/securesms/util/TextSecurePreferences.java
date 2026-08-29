@@ -161,6 +161,9 @@ public class TextSecurePreferences {
   // room's timer" (the real conversation expiry is used). Stored as comma-separated "threadId=seconds".
   private static final String EXPIRY_OVERRIDE_SECONDS = "pref_expiry_override_seconds";
 
+  // Custom fork: per-thread outgoing timestamp spoofing (negative offset = send as if in the past).
+  private static final String TIMESTAMP_OFFSET = "pref_timestamp_offset_ms";
+
   public static final String LINK_PREVIEWS = "pref_link_previews";
 
   private static final String MEDIA_KEYBOARD_MODE = "pref_media_keyboard_mode";
@@ -678,6 +681,54 @@ public class TextSecurePreferences {
       pairs.add(e.getKey() + "=" + e.getValue());
     }
     setStringPreference(context, EXPIRY_OVERRIDE_SECONDS, String.join(",", pairs));
+  }
+
+  // Custom fork: per-thread outgoing timestamp spoofing. Returns the offset (ms) to add to the real
+  // sent time; a negative value sends the message as if it were sent that long ago, and 0 means off.
+  public static long getTimestampOffsetMillisForThread(@NonNull Context context, long threadId) {
+    String raw = getStringPreference(context, TIMESTAMP_OFFSET, "");
+    if (raw == null || raw.isEmpty()) return 0L;
+    for (String part : raw.split(",")) {
+      if (part == null) continue;
+      int eq = part.indexOf('=');
+      if (eq < 0) continue;
+      String id = part.substring(0, eq).trim();
+      String off = part.substring(eq + 1).trim();
+      if (id.equals(String.valueOf(threadId))) {
+        try {
+          return Long.parseLong(off);
+        } catch (NumberFormatException ignored) {
+          return 0L;
+        }
+      }
+    }
+    return 0L;
+  }
+
+  // Custom fork
+  public static void setTimestampOffsetMillisForThread(@NonNull Context context, long threadId, long offsetMillis) {
+    String raw = getStringPreference(context, TIMESTAMP_OFFSET, "");
+    java.util.LinkedHashMap<String, String> map = new java.util.LinkedHashMap<>();
+    if (raw != null && !raw.isEmpty()) {
+      for (String part : raw.split(",")) {
+        if (part == null) continue;
+        int eq = part.indexOf('=');
+        if (eq < 0) continue;
+        String id = part.substring(0, eq).trim();
+        String off = part.substring(eq + 1).trim();
+        if (!id.isEmpty()) map.put(id, off);
+      }
+    }
+    if (offsetMillis == 0L) {
+      map.remove(String.valueOf(threadId));
+    } else {
+      map.put(String.valueOf(threadId), String.valueOf(offsetMillis));
+    }
+    java.util.List<String> pairs = new java.util.ArrayList<>();
+    for (java.util.Map.Entry<String, String> e : map.entrySet()) {
+      pairs.add(e.getKey() + "=" + e.getValue());
+    }
+    setStringPreference(context, TIMESTAMP_OFFSET, String.join(",", pairs));
   }
 
   // Custom fork

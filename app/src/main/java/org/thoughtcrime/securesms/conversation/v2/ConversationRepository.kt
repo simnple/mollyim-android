@@ -468,6 +468,19 @@ class ConversationRepository(
     return if (override == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) roomSeconds else override
   }
 
+  // Custom fork: outgoing timestamp spoofing. Returns a sent time shifted by the per-thread offset
+  // configured for this conversation (default 0 = real time). This is the timestamp put on the wire
+  // and therefore what the recipient sees; our own local DB copy still stores the real time.
+  private fun applyTimestampOffset(threadId: Long, realTime: Long): Long {
+    val offset = TextSecurePreferences.getTimestampOffsetMillisForThread(AppDependencies.application, threadId)
+    if (offset == 0L) return realTime
+    // Clamp so we never send something older than ~10 days or in the future (some clients reject
+    // extreme values / treat them as bad orderings).
+    val min = realTime - 10L * 24L * 60L * 60L * 1000L
+    val max = realTime
+    return minOf(maxOf(realTime + offset, min), max)
+  }
+
   fun sendMessage(
     threadId: Long,
     threadRecipient: Recipient,
@@ -498,7 +511,7 @@ class ConversationRepository(
 
       val message = OutgoingMessage(
         threadRecipient = threadRecipient,
-        sentTimeMillis = System.currentTimeMillis(),
+        sentTimeMillis = applyTimestampOffset(threadId, System.currentTimeMillis()),
         body = if (slideDeck != null) OutgoingMessage.buildMessage(slideDeck, splitMessage.body) else splitMessage.body,
         expiresIn = applyExpiryOverrideSeconds(threadId, threadRecipient.expiresInSeconds) * 1000L,
         isUrgent = true,

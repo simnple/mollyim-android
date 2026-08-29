@@ -20,7 +20,6 @@ import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.messagerequests.MessageRequestState
 import org.thoughtcrime.securesms.recipients.Recipient
-import org.thoughtcrime.securesms.util.ExpirationUtil
 import org.thoughtcrime.securesms.util.TextSecurePreferences
 
 /**
@@ -222,18 +221,6 @@ internal object ConversationOptionsMenu {
         echoItem.isChecked = echoOn
         echoItem.setTitle(if (echoOn) R.string.conversation__menu_echo_off else R.string.conversation__menu_echo_on)
       }
-
-      val expiryItem = menu.findItem(R.id.menu_expiry_spoof)
-      if (expiryItem != null) {
-        val threadId = callback.getSnapshot().threadId
-        val seconds = TextSecurePreferences.getExpiryOverrideSecondsForThread(AppDependencies.application, threadId)
-        if (seconds == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
-          expiryItem.setTitle(R.string.conversation__menu_expiry_spoof)
-        } else {
-          val display = ExpirationUtil.getExpirationDisplayValue(AppDependencies.application, seconds)
-          expiryItem.setTitle(AppDependencies.application.getString(R.string.conversation__menu_expiry_spoof_active, display))
-        }
-      }
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -255,7 +242,6 @@ internal object ConversationOptionsMenu {
         R.id.menu_spam -> callback.handleSpam()
         R.id.menu_delete_all_my_messages -> callback.handleDeleteAllMyMessages()
         R.id.menu_echo -> callback.handleToggleEcho()
-        R.id.menu_expiry_spoof -> callback.handleExpirySpoof()
         R.id.menu_create_bubble -> callback.handleCreateBubble()
         androidx.appcompat.R.id.home -> callback.handleGoHome()
         R.id.menu_block -> callback.handleBlock()
@@ -339,6 +325,5 @@ internal object ConversationOptionsMenu {
     fun handleSpam()
     fun handleDeleteAllMyMessages()
     fun handleToggleEcho()
-    fun handleExpirySpoof()
   }
 }

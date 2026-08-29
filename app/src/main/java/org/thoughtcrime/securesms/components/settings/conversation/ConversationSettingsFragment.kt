@@ -8,6 +8,7 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
@@ -60,6 +61,7 @@ import org.thoughtcrime.securesms.components.settings.DSLSettingsIcon
 import org.thoughtcrime.securesms.components.settings.DSLSettingsText
 import org.thoughtcrime.securesms.components.settings.NO_TINT
 import org.thoughtcrime.securesms.components.settings.app.AppSettingsActivity
+import org.thoughtcrime.securesms.components.settings.app.privacy.expire.CustomExpireTimerSelectorView
 import org.thoughtcrime.securesms.components.settings.app.subscription.donate.CheckoutFlowActivity
 import org.thoughtcrime.securesms.components.settings.configure
 import org.thoughtcrime.securesms.components.settings.conversation.preferences.AvatarPreference
@@ -117,6 +119,7 @@ import org.thoughtcrime.securesms.util.DateUtils
 import org.thoughtcrime.securesms.util.ExpirationUtil
 import org.thoughtcrime.securesms.util.Material3OnScrollHelper
 import org.thoughtcrime.securesms.util.RemoteConfig
+import org.thoughtcrime.securesms.util.TextSecurePreferences
 import org.thoughtcrime.securesms.util.ViewUtil
 import org.thoughtcrime.securesms.util.WindowUtil
 import org.thoughtcrime.securesms.util.adapter.mapping.MappingAdapter
@@ -635,6 +638,22 @@ class ConversationSettingsFragment :
         )
       }
 
+      if (!state.recipient.isSelf) {
+        dividerPref()
+
+        clickPref(
+          title = DSLSettingsText.from(R.string.ConversationSettingsFragment__force_disappearing_messages),
+          icon = DSLSettingsIcon.from(R.drawable.symbol_timer_24),
+          onClick = { showExpiryOverrideDialog(state.threadId) }
+        )
+
+        clickPref(
+          title = DSLSettingsText.from(R.string.ConversationSettingsFragment__message_timestamp_spoof),
+          icon = DSLSettingsIcon.from(CoreUiR.drawable.symbol_edit_24),
+          onClick = { showTimestampSpoofDialog(state.threadId) }
+        )
+      }
+
       if (!state.recipient.isReleaseNotes && SignalStore.labs.starredMessages) {
         clickPref(
           title = DSLSettingsText.from(R.string.ConversationSettingsFragment__starred_messages),
@@ -1148,6 +1167,195 @@ class ConversationSettingsFragment :
         }
       }
     }
+  }
+
+  private fun showExpiryOverrideDialog(threadId: Long) {
+    val current = TextSecurePreferences.getExpiryOverrideSecondsForThread(requireContext(), threadId)
+
+    val labels = arrayOf(
+      getString(R.string.ExpiryDialog__follow_room),
+      getString(R.string.ExpireTimerSettingsFragment__off),
+      getString(R.string.ExpireTimerSettingsFragment__30_seconds),
+      getString(R.string.ExpireTimerSettingsFragment__5_minutes),
+      getString(R.string.ExpireTimerSettingsFragment__1_hour),
+      getString(R.string.ExpireTimerSettingsFragment__8_hours),
+      getString(R.string.ExpireTimerSettingsFragment__1_day),
+      getString(R.string.ExpireTimerSettingsFragment__1_week),
+      getString(R.string.ExpireTimerSettingsFragment__4_weeks),
+      getString(R.string.ExpiryDialog__custom)
+    )
+    val seconds = intArrayOf(
+      TextSecurePreferences.EXPIRY_OVERRIDE_UNSET,
+      0,
+      30,
+      300,
+      3600,
+      28800,
+      86400,
+      604800,
+      2419200
+    )
+    val customIndex = seconds.size
+
+    val checked = if (current == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
+      0
+    } else {
+      var matchIndex = -1
+      for (i in seconds.indices) {
+        if (seconds[i] == current) matchIndex = i
+      }
+      if (matchIndex >= 0) matchIndex else customIndex
+    }
+
+    MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.ExpiryDialog__title)
+      .setSingleChoiceItems(labels, checked) { dialog, which ->
+        if (which == customIndex) {
+          dialog.dismiss()
+          showCustomExpiryInput(threadId)
+          return@setSingleChoiceItems
+        }
+        val value = seconds[which]
+        TextSecurePreferences.setExpiryOverrideSecondsForThread(requireContext(), threadId, value)
+        val message = if (value == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
+          getString(R.string.ExpiryDialog__toast_off)
+        } else {
+          getString(R.string.ExpiryDialog__toast_on, ExpirationUtil.getExpirationDisplayValue(requireContext(), value))
+        }
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        dialog.dismiss()
+      }
+      .setNegativeButton(R.string.ExpiryDialog__cancel, null)
+      .show()
+  }
+
+  private fun showCustomExpiryInput(threadId: Long) {
+    val view = LayoutInflater.from(requireContext()).inflate(R.layout.custom_expire_timer_select_dialog, null, false)
+    val selector = view.findViewById<CustomExpireTimerSelectorView>(R.id.custom_expire_timer_select_dialog_selector)
+
+    val current = TextSecurePreferences.getExpiryOverrideSecondsForThread(requireContext(), threadId)
+    if (current != TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
+      selector.setTimer(current)
+    }
+
+    MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.ExpireTimerSettingsFragment__custom_time)
+      .setView(view)
+      .setPositiveButton(R.string.ExpireTimerSettingsFragment__set) { _, _ ->
+        val value = selector.getTimer()
+        TextSecurePreferences.setExpiryOverrideSecondsForThread(requireContext(), threadId, value)
+        Toast.makeText(
+          requireContext(),
+          getString(R.string.ExpiryDialog__toast_on, ExpirationUtil.getExpirationDisplayValue(requireContext(), value)),
+          Toast.LENGTH_SHORT
+        ).show()
+      }
+      .setNegativeButton(R.string.ExpiryDialog__cancel, null)
+      .show()
+  }
+
+  private fun showTimestampSpoofDialog(threadId: Long) {
+    val current = TextSecurePreferences.getTimestampOffsetMillisForThread(requireContext(), threadId)
+
+    val options = arrayOf(
+      getString(R.string.TimestampDialog__off),
+      getString(R.string.TimestampDialog__1_min),
+      getString(R.string.TimestampDialog__5_min),
+      getString(R.string.TimestampDialog__30_min),
+      getString(R.string.TimestampDialog__1_hr),
+      getString(R.string.TimestampDialog__today_midnight),
+      getString(R.string.TimestampDialog__yesterday),
+      getString(R.string.TimestampDialog__3_days),
+      getString(R.string.TimestampDialog__custom)
+    )
+    val offsets = longArrayOf(
+      0L,
+      -60_000L,
+      -5 * 60_000L,
+      -30 * 60_000L,
+      -60 * 60_000L,
+      -1L,
+      -2L,
+      -3 * 24 * 60 * 60_000L,
+      -100L
+    )
+    val customIndex = offsets.size - 1
+
+    var checked = 0
+    for (i in offsets.indices) {
+      if (buildTimestampOffset(offsets[i]) == current) checked = i
+    }
+
+    MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.TimestampDialog__title)
+      .setSingleChoiceItems(options, checked) { dialog, which ->
+        if (which == customIndex) {
+          dialog.dismiss()
+          showCustomTimestampPicker(threadId)
+          return@setSingleChoiceItems
+        }
+        val offset = buildTimestampOffset(offsets[which])
+        TextSecurePreferences.setTimestampOffsetMillisForThread(requireContext(), threadId, offset)
+        val message = if (offset == 0L) {
+          getString(R.string.TimestampDialog__toast_off)
+        } else {
+          getString(R.string.TimestampDialog__toast_on, options[which])
+        }
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        dialog.dismiss()
+      }
+      .setNegativeButton(R.string.TimestampDialog__cancel, null)
+      .show()
+  }
+
+  private fun buildTimestampOffset(marker: Long): Long {
+    val now = System.currentTimeMillis()
+    return when (marker) {
+      -1L -> {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = now }
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        cal.set(java.util.Calendar.MINUTE, 0)
+        cal.set(java.util.Calendar.SECOND, 0)
+        cal.set(java.util.Calendar.MILLISECOND, 0)
+        cal.timeInMillis - now
+      }
+
+      -2L -> -24L * 60L * 60L * 1000L
+
+      else -> marker
+    }
+  }
+
+  private fun showCustomTimestampPicker(threadId: Long) {
+    val cal = java.util.Calendar.getInstance()
+
+    val onTimePicked = object : android.app.TimePickerDialog.OnTimeSetListener {
+      override fun onTimeSet(view: android.widget.TimePicker, hourOfDay: Int, minute: Int) {
+        cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
+        cal.set(java.util.Calendar.MINUTE, minute)
+        cal.set(java.util.Calendar.SECOND, 0)
+        cal.set(java.util.Calendar.MILLISECOND, 0)
+
+        val target = cal.timeInMillis
+        val offset = minOf(target - System.currentTimeMillis(), 0L)
+        TextSecurePreferences.setTimestampOffsetMillisForThread(requireContext(), threadId, offset)
+        val label = android.text.format.DateFormat.getTimeFormat(requireContext()).format(target)
+        Toast.makeText(requireContext(), getString(R.string.TimestampDialog__toast_on, label), Toast.LENGTH_SHORT).show()
+      }
+    }
+
+    android.app.DatePickerDialog(
+      requireContext(),
+      { _, year, month, dayOfMonth ->
+        cal.set(java.util.Calendar.YEAR, year)
+        cal.set(java.util.Calendar.MONTH, month)
+        cal.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
+        android.app.TimePickerDialog(requireContext(), onTimePicked, cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE), true).show()
+      },
+      cal.get(java.util.Calendar.YEAR),
+      cal.get(java.util.Calendar.MONTH),
+      cal.get(java.util.Calendar.DAY_OF_MONTH)
+    ).show()
   }
 
   private fun GroupMemberEntry.FullMember.getMemberLabel(
