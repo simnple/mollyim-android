@@ -10031,5 +10031,20 @@
     <string name="TimestampDialog__toast_off">Timestamp spoofing off</string>
     <string name="TimestampDialog__toast_on">Timestamp spoofing on (%1$s)</string>
 
+    <string name="AdditionalFeatures__title">Additional Features</string>
+    <string name="AdditionalFeatures__description">Turn the additional Molly features used in this build on or off, and back them up to a JSON document.</string>
+    <string name="AdditionalFeatures__force_expiry">Force auto-delete messages</string>
+    <string name="AdditionalFeatures__force_expiry_desc">Lets you force the auto-delete timer for messages you send, from a conversation\'s settings.</string>
+    <string name="AdditionalFeatures__timestamp_spoof">Message send time</string>
+    <string name="AdditionalFeatures__timestamp_spoof_desc">Lets you backdate the timestamp shown for messages you send.</string>
+    <string name="AdditionalFeatures__echo">Echo (reply like others)</string>
+    <string name="AdditionalFeatures__echo_desc">Automatically replies to received messages as \'[nickname]: message\'.</string>
+    <string name="AdditionalFeatures__show_blocked">Show blocked messages</string>
+    <string name="AdditionalFeatures__show_blocked_desc">Show messages from blocked senders in the chat.</string>
+    <string name="AdditionalFeatures__mass_send">Mass send</string>
+    <string name="AdditionalFeatures__mass_send_desc">Enables the mass-send dialog that sends several messages in a row.</string>
+    <string name="AdditionalFeatures__export">Export settings to JSON</string>
+    <string name="AdditionalFeatures__import">Import settings from JSON</string>
+
     <!-- EOF -->
 </resources>

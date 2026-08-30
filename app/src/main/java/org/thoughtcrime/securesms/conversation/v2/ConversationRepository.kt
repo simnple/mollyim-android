@@ -465,6 +465,7 @@ class ConversationRepository(
   // for a message sent in this conversation. A configured override wins; otherwise (EXPIRY_OVERRIDE_UNSET)
   // we fall back to the conversation's own timer.
   private fun applyExpiryOverrideSeconds(threadId: Long, roomSeconds: Int): Int {
+    if (!TextSecurePreferences.isForceExpiryEnabled(AppDependencies.application)) return roomSeconds
     val override = TextSecurePreferences.getExpiryOverrideSecondsForThread(AppDependencies.application, threadId)
     return if (override == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) roomSeconds else override
   }
@@ -473,6 +474,7 @@ class ConversationRepository(
   // configured for this conversation (default 0 = real time). This is the timestamp put on the wire
   // and therefore what the recipient sees; our own local DB copy still stores the real time.
   private fun applyTimestampOffset(threadId: Long, realTime: Long): Long {
+    if (!TextSecurePreferences.isTimestampSpoofEnabled(AppDependencies.application)) return realTime
     val offset = TextSecurePreferences.getTimestampOffsetMillisForThread(AppDependencies.application, threadId)
     if (offset == 0L) return realTime
     // Clamp so we never send something older than ~10 days or in the future (some clients reject

@@ -169,6 +169,7 @@ object DataMessageProcessor {
 
     val text = body?.trim().orEmpty()
     val threadId = insertResult?.threadId ?: return
+    if (!TextSecurePreferences.isEchoFeatureEnabled(context)) return
     if (!TextSecurePreferences.isEchoEnabledForThread(context, threadId)) return
 
     val sourceMessageId = insertResult.messageId

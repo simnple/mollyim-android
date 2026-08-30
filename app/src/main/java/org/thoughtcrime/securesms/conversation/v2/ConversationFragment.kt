@@ -4429,6 +4429,10 @@ class ConversationFragment :
         return
       }
 
+      if (!TextSecurePreferences.isMassSendEnabled(requireContext())) {
+        return
+      }
+
       val density = resources.displayMetrics.density
       val pad = (16 * density).toInt()
 

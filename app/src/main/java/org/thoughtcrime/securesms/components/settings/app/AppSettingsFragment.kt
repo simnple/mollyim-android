@@ -107,6 +107,7 @@ class AppSettingsFragment : ComposeFragment(), Callbacks {
             is AppSettingsRoute.HelpRoute.Settings -> findNavController().safeNavigate(R.id.action_appSettingsFragment_to_helpSettingsFragment)
             is AppSettingsRoute.Invite -> findNavController().safeNavigate(R.id.action_appSettingsFragment_to_inviteFragment)
             is AppSettingsRoute.LabsRoute.Labs -> findNavController().safeNavigate(R.id.action_appSettingsFragment_to_labsSettingsFragment)
+            AppSettingsRoute.AdditionalFeatures -> findNavController().safeNavigate(R.id.action_appSettingsFragment_to_additionalFeaturesSettingsFragment)
             is AppSettingsRoute.InternalRoute.Internal -> findNavController().safeNavigate(R.id.action_appSettingsFragment_to_internalSettingsFragment)
             is AppSettingsRoute.AccountRoute.ManageProfile -> findNavController().safeNavigate(R.id.action_appSettingsFragment_to_manageProfileActivity)
             is AppSettingsRoute.UsernameLinkRoute.UsernameLink -> findNavController().safeNavigate(R.id.action_appSettingsFragment_to_usernameLinkSettingsFragment)
@@ -439,12 +440,24 @@ private fun AppSettingsContent(
           )
         }
 
-        // Custom fork: the Labs entry is always visible so users can opt into
-        // experimental flags (e.g. sticker replies) regardless of build type.
+        // Custom fork: the "추가 기능" (Additional Features) entry is placed above Labs and lets
+        // users toggle the always-on Molly features on/off and back them up as JSON.
         item {
           Dividers.Default()
         }
 
+        item {
+          Rows.TextRow(
+            text = "추가 기능",
+            icon = painterResource(R.drawable.show_more),
+            onClick = {
+              callbacks.navigate(AppSettingsRoute.AdditionalFeatures)
+            }
+          )
+        }
+
+        // Custom fork: the Labs entry is always visible so users can opt into
+        // experimental flags (e.g. sticker replies) regardless of build type.
         item {
           Rows.TextRow(
             text = "Labs",

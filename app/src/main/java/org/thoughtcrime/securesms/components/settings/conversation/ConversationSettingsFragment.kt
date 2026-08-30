@@ -656,35 +656,39 @@ class ConversationSettingsFragment :
       if (!state.recipient.isSelf) {
         dividerPref()
 
-        val expirySeconds = TextSecurePreferences.getExpiryOverrideSecondsForThread(requireContext(), state.threadId)
-        val expirySummary = if (expirySeconds == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
-          getString(R.string.ExpiryDialog__follow_room)
-        } else {
-          ExpirationUtil.getExpirationDisplayValue(requireContext(), expirySeconds)
+        if (TextSecurePreferences.isForceExpiryEnabled(requireContext())) {
+          val expirySeconds = TextSecurePreferences.getExpiryOverrideSecondsForThread(requireContext(), state.threadId)
+          val expirySummary = if (expirySeconds == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
+            getString(R.string.ExpiryDialog__follow_room)
+          } else {
+            ExpirationUtil.getExpirationDisplayValue(requireContext(), expirySeconds)
+          }
+
+          clickPref(
+            title = DSLSettingsText.from(R.string.ConversationSettingsFragment__force_disappearing_messages),
+            summary = DSLSettingsText.from(expirySummary),
+            icon = DSLSettingsIcon.from(R.drawable.symbol_timer_24),
+            onClick = {
+              val action = ConversationSettingsFragmentDirections.actionConversationSettingsFragmentToForceExpirySettingsFragment(state.threadId)
+              navController.safeNavigate(action)
+            }
+          )
         }
 
-        val tsOffset = TextSecurePreferences.getTimestampOffsetMillisForThread(requireContext(), state.threadId)
-        val tsSummary = formatTimestampSummary(tsOffset)
+        if (TextSecurePreferences.isTimestampSpoofEnabled(requireContext())) {
+          val tsOffset = TextSecurePreferences.getTimestampOffsetMillisForThread(requireContext(), state.threadId)
+          val tsSummary = formatTimestampSummary(tsOffset)
 
-        clickPref(
-          title = DSLSettingsText.from(R.string.ConversationSettingsFragment__force_disappearing_messages),
-          summary = DSLSettingsText.from(expirySummary),
-          icon = DSLSettingsIcon.from(R.drawable.symbol_timer_24),
-          onClick = {
-            val action = ConversationSettingsFragmentDirections.actionConversationSettingsFragmentToForceExpirySettingsFragment(state.threadId)
-            navController.safeNavigate(action)
-          }
-        )
-
-        clickPref(
-          title = DSLSettingsText.from(R.string.ConversationSettingsFragment__message_timestamp_spoof),
-          summary = DSLSettingsText.from(tsSummary),
-          icon = DSLSettingsIcon.from(CoreUiR.drawable.symbol_edit_24),
-          onClick = {
-            val action = ConversationSettingsFragmentDirections.actionConversationSettingsFragmentToMessageSendTimeSettingsFragment(state.threadId)
-            navController.safeNavigate(action)
-          }
-        )
+          clickPref(
+            title = DSLSettingsText.from(R.string.ConversationSettingsFragment__message_timestamp_spoof),
+            summary = DSLSettingsText.from(tsSummary),
+            icon = DSLSettingsIcon.from(CoreUiR.drawable.symbol_edit_24),
+            onClick = {
+              val action = ConversationSettingsFragmentDirections.actionConversationSettingsFragmentToMessageSendTimeSettingsFragment(state.threadId)
+              navController.safeNavigate(action)
+            }
+          )
+        }
       }
 
       if (!state.recipient.isReleaseNotes && SignalStore.labs.starredMessages) {

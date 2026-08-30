@@ -45,6 +45,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class TextSecurePreferences {
 
   private static final String TAG = Log.tag(TextSecurePreferences.class);
@@ -739,6 +742,137 @@ public class TextSecurePreferences {
   // Custom fork
   public static void setShowBlockedMessagesEnabled(@NonNull Context context, boolean value) {
     setBooleanPreference(context, SHOW_BLOCKED_MESSAGES, value);
+  }
+
+  // Custom fork: global master switches for the additional (Molly) features. They allow the
+  // always-on patches to be turned off entirely. Defaults are on.
+  private static final String FEATURE_FORCE_EXPIRY    = "pref_feature_force_expiry";
+  private static final String FEATURE_TIMESTAMP_SPOOF = "pref_feature_timestamp_spoof";
+  private static final String FEATURE_ECHO            = "pref_feature_echo";
+  private static final String FEATURE_MASS_SEND       = "pref_feature_mass_send";
+
+  public static boolean isForceExpiryEnabled(@NonNull Context context) {
+    return getBooleanPreference(context, FEATURE_FORCE_EXPIRY, true);
+  }
+
+  public static void setForceExpiryEnabled(@NonNull Context context, boolean value) {
+    setBooleanPreference(context, FEATURE_FORCE_EXPIRY, value);
+  }
+
+  public static boolean isTimestampSpoofEnabled(@NonNull Context context) {
+    return getBooleanPreference(context, FEATURE_TIMESTAMP_SPOOF, true);
+  }
+
+  public static void setTimestampSpoofEnabled(@NonNull Context context, boolean value) {
+    setBooleanPreference(context, FEATURE_TIMESTAMP_SPOOF, value);
+  }
+
+  public static boolean isEchoFeatureEnabled(@NonNull Context context) {
+    return getBooleanPreference(context, FEATURE_ECHO, true);
+  }
+
+  public static void setEchoFeatureEnabled(@NonNull Context context, boolean value) {
+    setBooleanPreference(context, FEATURE_ECHO, value);
+  }
+
+  public static boolean isMassSendEnabled(@NonNull Context context) {
+    return getBooleanPreference(context, FEATURE_MASS_SEND, true);
+  }
+
+  public static void setMassSendEnabled(@NonNull Context context, boolean value) {
+    setBooleanPreference(context, FEATURE_MASS_SEND, value);
+  }
+
+  // Custom fork: export all additional settings (master switches + per-thread data) as JSON so the
+  // user can back them up / move them to another device.
+  public static String exportAdditionalSettingsJson(@NonNull Context context) {
+    JSONObject json = new JSONObject();
+    try {
+      json.put("version", 1);
+      json.put("force_expiry", isForceExpiryEnabled(context));
+      json.put("timestamp_spoof", isTimestampSpoofEnabled(context));
+      json.put("echo", isEchoFeatureEnabled(context));
+      json.put("mass_send", isMassSendEnabled(context));
+      json.put("show_blocked", isShowBlockedMessagesEnabled(context));
+
+      json.put("echo_threads", new JSONArray(splitCsv(getStringPreference(context, ECHO_ENABLED, ""))));
+      json.put("expiry_overrides", mapToJson(getStringPreference(context, EXPIRY_OVERRIDE_SECONDS, "")));
+      json.put("timestamp_offsets", mapToJson(getStringPreference(context, TIMESTAMP_OFFSET, "")));
+    } catch (Exception ignored) {
+    }
+    return json.toString();
+  }
+
+  // Custom fork: restore additional settings from an exported JSON document.
+  public static void importAdditionalSettingsJson(@NonNull Context context, @NonNull String json) {
+    try {
+      JSONObject root = new JSONObject(json);
+      setForceExpiryEnabled(context, root.optBoolean("force_expiry", true));
+      setTimestampSpoofEnabled(context, root.optBoolean("timestamp_spoof", true));
+      setEchoFeatureEnabled(context, root.optBoolean("echo", true));
+      setMassSendEnabled(context, root.optBoolean("mass_send", true));
+      setShowBlockedMessagesEnabled(context, root.optBoolean("show_blocked", false));
+
+      JSONArray echoThreads = root.optJSONArray("echo_threads");
+      if (echoThreads != null) {
+        java.util.ArrayList<String> ids = new java.util.ArrayList<>();
+        for (int i = 0; i < echoThreads.length(); i++) {
+          ids.add(String.valueOf(echoThreads.optLong(i)));
+        }
+        setStringPreference(context, ECHO_ENABLED, String.join(",", ids));
+      }
+
+      JSONObject expiry = root.optJSONObject("expiry_overrides");
+      if (expiry != null) {
+        java.util.ArrayList<String> pairs = new java.util.ArrayList<>();
+        java.util.Iterator<String> keys = expiry.keys();
+        while (keys.hasNext()) {
+          String key = keys.next();
+          pairs.add(key + "=" + expiry.optLong(key));
+        }
+        setStringPreference(context, EXPIRY_OVERRIDE_SECONDS, String.join(",", pairs));
+      }
+
+      JSONObject offsets = root.optJSONObject("timestamp_offsets");
+      if (offsets != null) {
+        java.util.ArrayList<String> pairs = new java.util.ArrayList<>();
+        java.util.Iterator<String> keys = offsets.keys();
+        while (keys.hasNext()) {
+          String key = keys.next();
+          pairs.add(key + "=" + offsets.optLong(key));
+        }
+        setStringPreference(context, TIMESTAMP_OFFSET, String.join(",", pairs));
+      }
+    } catch (Exception ignored) {
+    }
+  }
+
+  private static List<String> splitCsv(String raw) {
+    List<String> out = new java.util.ArrayList<>();
+    if (raw == null || raw.isEmpty()) return out;
+    for (String part : raw.split(",")) {
+      if (part != null && !part.trim().isEmpty()) out.add(part.trim());
+    }
+    return out;
+  }
+
+  private static JSONObject mapToJson(String raw) {
+    JSONObject json = new JSONObject();
+    if (raw == null || raw.isEmpty()) return json;
+    for (String part : raw.split(",")) {
+      if (part == null) continue;
+      int eq = part.indexOf('=');
+      if (eq < 0) continue;
+      String key = part.substring(0, eq).trim();
+      String value = part.substring(eq + 1).trim();
+      if (!key.isEmpty()) {
+        try {
+          json.put(key, Long.parseLong(value));
+        } catch (NumberFormatException ignored) {
+        }
+      }
+    }
+    return json;
   }
 
   /**

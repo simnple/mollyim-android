@@ -9822,5 +9822,20 @@
     <string name="TimestampDialog__toast_off">타임스탬프 위조 끔</string>
     <string name="TimestampDialog__toast_on">타임스탬프 위조 켬 (%1$s)</string>
 
+    <string name="AdditionalFeatures__title">추가 기능</string>
+    <string name="AdditionalFeatures__description">이 빌드에 포함된 추가(Molly) 기능을 켜고 끄고, 설정을 JSON으로 백업할 수 있습니다.</string>
+    <string name="AdditionalFeatures__force_expiry">강제 자동 삭제 메시지</string>
+    <string name="AdditionalFeatures__force_expiry_desc">대화방 정보에서 보내는 메시지의 자동 삭제 시간을 강제로 지정할 수 있게 합니다.</string>
+    <string name="AdditionalFeatures__timestamp_spoof">메시지 전송 시간</string>
+    <string name="AdditionalFeatures__timestamp_spoof_desc">보내는 메시지에 표시되는 전송 시각을 뒤로 돌릴 수 있게 합니다.</string>
+    <string name="AdditionalFeatures__echo">남 따라하기</string>
+    <string name="AdditionalFeatures__echo_desc">받은 메시지에 \'[닉네임]: 메시지\' 형태로 자동 답장합니다.</string>
+    <string name="AdditionalFeatures__show_blocked">차단된 메시지 표시</string>
+    <string name="AdditionalFeatures__show_blocked_desc">차단한 발신자의 메시지도 대화에 표시합니다.</string>
+    <string name="AdditionalFeatures__mass_send">대량 전송</string>
+    <string name="AdditionalFeatures__mass_send_desc">여러 메시지를 연속으로 보내는 대량 전송 대화상자를 사용합니다.</string>
+    <string name="AdditionalFeatures__export">설정을 JSON으로 내보내기</string>
+    <string name="AdditionalFeatures__import">설정을 JSON에서 가져오기</string>
+
     <!-- EOF -->
 </resources>
