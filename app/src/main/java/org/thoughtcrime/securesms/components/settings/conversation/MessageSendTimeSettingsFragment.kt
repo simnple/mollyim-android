@@ -91,6 +91,12 @@ class MessageSendTimeSettingsFragment : ComposeFragment() {
             .padding(paddingValues)
         ) {
           LazyColumn {
+            item {
+              Rows.TextRow(
+                label = stringResource(R.string.MessageSendTimeSettingsFragment__description)
+              )
+            }
+
             items(labels.size) { index ->
               Rows.RadioRow(
                 selected = selection == offsets[index],

@@ -9799,6 +9799,8 @@
 
     <string name="ConversationSettingsFragment__force_disappearing_messages">강제 자동 삭제 메시지</string>
     <string name="ConversationSettingsFragment__message_timestamp_spoof">메시지 전송 시간</string>
+    <string name="ForceExpirySettingsFragment__description">이 대화에서 보내는 메시지에 적용할 자동 삭제 시간을 강제로 지정합니다. 기본(룸 기본값)은 대화방의 자동 삭제 타이머를 따릅니다.</string>
+    <string name="MessageSendTimeSettingsFragment__description">메시지를 보낼 때 상대방에게 보이는 전송 시각을 뒤로 돌려 표시합니다. 기본(실제 시각)은 실제 보낸 시각으로 전송합니다.</string>
     <string name="ExpiryDialog__title">강제 자동 삭제 메시지</string>
     <string name="ExpiryDialog__follow_room">이 채팅의 타이머 따르기 (기본)</string>
     <string name="ExpiryDialog__custom">직접 입력…</string>

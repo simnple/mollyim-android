@@ -10008,6 +10008,8 @@
 
     <string name="ConversationSettingsFragment__force_disappearing_messages">Force auto-delete message</string>
     <string name="ConversationSettingsFragment__message_timestamp_spoof">Message send time</string>
+    <string name="ForceExpirySettingsFragment__description">Force a specific auto-delete timer for messages you send in this conversation. Default (room default) follows this chat\'s timer.</string>
+    <string name="MessageSendTimeSettingsFragment__description">Backdate the timestamp shown to others for messages you send. Default (real time) sends at the actual time.</string>
     <string name="ExpiryDialog__title">Force auto-delete message</string>
     <string name="ExpiryDialog__follow_room">Use this chat\'s timer (default)</string>
     <string name="ExpiryDialog__custom">Custom…</string>
