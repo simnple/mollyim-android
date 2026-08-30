@@ -9815,6 +9815,7 @@
     <string name="TimestampDialog__yesterday">어제 같은 시각</string>
     <string name="TimestampDialog__3_days">3일 전</string>
     <string name="TimestampDialog__custom">직접 입력</string>
+    <string name="TimestampDialog__ago">%s 전</string>
     <string name="TimestampDialog__cancel">취소</string>
     <string name="TimestampDialog__toast_off">타임스탬프 위조 끔</string>
     <string name="TimestampDialog__toast_on">타임스탬프 위조 켬 (%1$s)</string>

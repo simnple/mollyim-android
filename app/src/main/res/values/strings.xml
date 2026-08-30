@@ -10024,6 +10024,7 @@
     <string name="TimestampDialog__yesterday">Yesterday, same time</string>
     <string name="TimestampDialog__3_days">3 days earlier</string>
     <string name="TimestampDialog__custom">Custom input</string>
+    <string name="TimestampDialog__ago">%s ago</string>
     <string name="TimestampDialog__cancel">Cancel</string>
     <string name="TimestampDialog__toast_off">Timestamp spoofing off</string>
     <string name="TimestampDialog__toast_on">Timestamp spoofing on (%1$s)</string>

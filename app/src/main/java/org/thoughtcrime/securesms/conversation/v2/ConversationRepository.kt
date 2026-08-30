@@ -192,8 +192,8 @@ class ConversationRepository(
       val threadId = SignalDatabase.threads.getOrCreateThreadIdFor(threadRecipient)
       val message = OutgoingMessage.pollMessage(
         threadRecipient = threadRecipient,
-        sentTimeMillis = System.currentTimeMillis(),
-        expiresIn = threadRecipient.expiresInSeconds.seconds.inWholeMilliseconds,
+        sentTimeMillis = applyTimestampOffset(threadId, System.currentTimeMillis()),
+        expiresIn = applyExpiryOverrideSeconds(threadId, threadRecipient.expiresInSeconds).toLong() * 1000L,
         poll = poll.copy(authorId = Recipient.self().id.toLong()),
         question = poll.question,
         quote = quote

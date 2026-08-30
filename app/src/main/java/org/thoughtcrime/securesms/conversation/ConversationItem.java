@@ -1178,8 +1178,15 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
       // original content. Render the retained body with a strikethrough (the status label is shown
       // in the footer next to the timestamp) instead of a generic "deleted this message" notice.
       CharSequence retainedBody = markRetainedBody(messageRecord, conversationMessage.getDisplayBody(getContext()));
-      bodyText.setText(retainedBody);
-      bodyText.setVisibility(View.VISIBLE);
+      // Only render the body when it has content; captionless media/stickers must not leave an
+      // empty text box below the thumbnail (the status is shown in the footer).
+      if (retainedBody.length() > 0) {
+        bodyText.setText(retainedBody);
+        bodyText.setVisibility(View.VISIBLE);
+      } else {
+        bodyText.setText(null);
+        bodyText.setVisibility(View.GONE);
+      }
       bodyText.setOverflowText(null);
     } else if (isCaptionlessMms(messageRecord) || isStoryReaction(messageRecord) || isGiftMessage(messageRecord) || messageRecord.isPaymentNotification() || messageRecord.isPaymentTombstone()) {
       bodyText.setText(null);
@@ -1761,7 +1768,7 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
   }
 
   private void setPoll(@NonNull MessageRecord messageRecord, int chatColor) {
-    if (hasPoll(messageRecord) && !messageRecord.isRemoteDelete() && !messageRecord.isMarkedExpired()) {
+    if (hasPoll(messageRecord)) {
       PollRecord poll = MessageRecordUtil.getPoll(messageRecord);
       PollComponentKt.setContent(pollView.get(), poll, isOutgoing(), chatColor, () -> {
         if (eventListener != null && batchSelected.isEmpty()) {

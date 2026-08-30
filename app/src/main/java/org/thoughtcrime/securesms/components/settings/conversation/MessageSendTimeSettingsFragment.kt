@@ -58,13 +58,13 @@ class MessageSendTimeSettingsFragment : ComposeFragment() {
 
     val labels = listOf(
       stringResource(R.string.TimestampDialog__off),
-      stringResource(R.string.ExpireTimerSettingsFragment__30_seconds),
-      stringResource(R.string.ExpireTimerSettingsFragment__5_minutes),
-      stringResource(R.string.ExpireTimerSettingsFragment__1_hour),
-      stringResource(R.string.ExpireTimerSettingsFragment__8_hours),
-      stringResource(R.string.ExpireTimerSettingsFragment__1_day),
-      stringResource(R.string.ExpireTimerSettingsFragment__1_week),
-      stringResource(R.string.ExpireTimerSettingsFragment__4_weeks)
+      agoLabel(R.string.ExpireTimerSettingsFragment__30_seconds),
+      agoLabel(R.string.ExpireTimerSettingsFragment__5_minutes),
+      agoLabel(R.string.ExpireTimerSettingsFragment__1_hour),
+      agoLabel(R.string.ExpireTimerSettingsFragment__8_hours),
+      agoLabel(R.string.ExpireTimerSettingsFragment__1_day),
+      agoLabel(R.string.ExpireTimerSettingsFragment__1_week),
+      agoLabel(R.string.ExpireTimerSettingsFragment__4_weeks)
     )
     val offsets = listOf(
       0L,
@@ -175,6 +175,11 @@ class MessageSendTimeSettingsFragment : ComposeFragment() {
     }
 
     timePicker.show(childFragmentManager, "TIME_PICKER")
+  }
+
+  @Composable
+  private fun agoLabel(labelResId: Int): String {
+    return stringResource(R.string.TimestampDialog__ago, stringResource(labelResId))
   }
 
   private fun formatCustomOffset(context: Context, offset: Long): String {

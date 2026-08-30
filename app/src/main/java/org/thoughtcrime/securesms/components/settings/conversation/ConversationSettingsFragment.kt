@@ -1353,19 +1353,19 @@ class ConversationSettingsFragment :
     return when (offset) {
       0L -> getString(R.string.TimestampDialog__off)
 
-      -30_000L -> getString(R.string.ExpireTimerSettingsFragment__30_seconds)
+      -30_000L -> getString(R.string.TimestampDialog__ago, getString(R.string.ExpireTimerSettingsFragment__30_seconds))
 
-      -5 * 60_000L -> getString(R.string.ExpireTimerSettingsFragment__5_minutes)
+      -5 * 60_000L -> getString(R.string.TimestampDialog__ago, getString(R.string.ExpireTimerSettingsFragment__5_minutes))
 
-      -60 * 60_000L -> getString(R.string.ExpireTimerSettingsFragment__1_hour)
+      -60 * 60_000L -> getString(R.string.TimestampDialog__ago, getString(R.string.ExpireTimerSettingsFragment__1_hour))
 
-      -8 * 60 * 60_000L -> getString(R.string.ExpireTimerSettingsFragment__8_hours)
+      -8 * 60 * 60_000L -> getString(R.string.TimestampDialog__ago, getString(R.string.ExpireTimerSettingsFragment__8_hours))
 
-      -24 * 60 * 60_000L -> getString(R.string.ExpireTimerSettingsFragment__1_day)
+      -24 * 60 * 60_000L -> getString(R.string.TimestampDialog__ago, getString(R.string.ExpireTimerSettingsFragment__1_day))
 
-      -7 * 24 * 60 * 60_000L -> getString(R.string.ExpireTimerSettingsFragment__1_week)
+      -7 * 24 * 60 * 60_000L -> getString(R.string.TimestampDialog__ago, getString(R.string.ExpireTimerSettingsFragment__1_week))
 
-      -4 * 7 * 24 * 60 * 60_000L -> getString(R.string.ExpireTimerSettingsFragment__4_weeks)
+      -4 * 7 * 24 * 60 * 60_000L -> getString(R.string.TimestampDialog__ago, getString(R.string.ExpireTimerSettingsFragment__4_weeks))
 
       else -> {
         val target = offset + System.currentTimeMillis()

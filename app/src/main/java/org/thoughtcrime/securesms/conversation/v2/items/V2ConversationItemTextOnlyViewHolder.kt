@@ -437,15 +437,12 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
 
     val bodyText = StringUtil.trim(styledText)
 
-    // Custom fork: retained deleted-for-everyone / expired messages keep their body visible (struck
-    // through), but the (삭제됨)/(만료됨) status is shown in the footer next to the timestamp.
+    // Custom fork: retained deleted-for-everyone / expired messages keep their body struck through,
+    // but the (삭제됨)/(만료됨) status is shown in the footer next to the timestamp. Only show the
+    // body when it has content so captionless media/stickers don't leave an empty text box.
     val marked = record.isMarkedDeleted() || record.isMarkedExpired()
-    binding.body.visible = bodyText.isNotEmpty() || marked
-    binding.body.text = if (bodyText.isNotEmpty()) {
-      if (marked) strikeThroughBody(bodyText) else bodyText
-    } else {
-      bodyText
-    }
+    binding.body.visible = bodyText.isNotEmpty()
+    binding.body.text = if (bodyText.isNotEmpty() && marked) strikeThroughBody(bodyText) else bodyText
   }
 
   /**
