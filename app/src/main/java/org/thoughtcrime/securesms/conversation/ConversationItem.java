@@ -1175,8 +1175,8 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
     if (messageRecord.isMarkedDeleted() || messageRecord.isMarkedExpired() ||
         (messageRecord.isRemoteDelete() || conversationMessage.getDeletedByRecipient() != null)) {
       // Custom fork: retained delete-for-everyone / admin-deleted / expired messages keep their
-      // original content. Render the retained body with a strikethrough and a grey-italic status
-      // label (삭제됨/만료됨 or deleted/expired) instead of a generic "deleted this message" notice.
+      // original content. Render the retained body with a strikethrough (the status label is shown
+      // in the footer next to the timestamp) instead of a generic "deleted this message" notice.
       CharSequence retainedBody = markRetainedBody(messageRecord, conversationMessage.getDisplayBody(getContext()));
       bodyText.setText(retainedBody);
       bodyText.setVisibility(View.VISIBLE);
@@ -1234,29 +1234,11 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
 
   /**
    * Custom fork: for retained delete-for-everyone / admin-deleted / expired messages, strike through
-   * the original body and append a grey-italic status label (삭제됨/만료됨 or deleted/expired) after it.
+   * the original body. The status label is shown in the footer next to the timestamp instead.
    */
   private CharSequence markRetainedBody(@NonNull MessageRecord messageRecord, @NonNull CharSequence originalBody) {
-    boolean ko        = Locale.getDefault().getLanguage().equals("ko");
-    String  bareLabel = null;
-    if (messageRecord.isMarkedExpired()) {
-      bareLabel = ko ? "(만료됨)" : "(expired)";
-    } else if (messageRecord.isMarkedDeleted() || messageRecord.isRemoteDelete() || conversationMessage.getDeletedByRecipient() != null) {
-      bareLabel = ko ? "(삭제됨)" : "(deleted)";
-    }
-
     SpannableStringBuilder builder = new SpannableStringBuilder(originalBody);
-    if (bareLabel != null) {
-      builder.setSpan(new StrikethroughSpan(), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-      String label = builder.length() == 0 ? bareLabel : " " + bareLabel;
-      int start    = builder.length();
-      builder.append(label);
-      int labelColor = ThemeUtil.getThemedColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant);
-      builder.setSpan(new ForegroundColorSpan(labelColor), start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-      builder.setSpan(new StyleSpan(Typeface.ITALIC), start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-    }
-
+    builder.setSpan(new StrikethroughSpan(), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     return builder;
   }
 
@@ -1779,7 +1761,7 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
   }
 
   private void setPoll(@NonNull MessageRecord messageRecord, int chatColor) {
-    if (hasPoll(messageRecord) && !messageRecord.isRemoteDelete()) {
+    if (hasPoll(messageRecord) && !messageRecord.isRemoteDelete() && !messageRecord.isMarkedExpired()) {
       PollRecord poll = MessageRecordUtil.getPoll(messageRecord);
       PollComponentKt.setContent(pollView.get(), poll, isOutgoing(), chatColor, () -> {
         if (eventListener != null && batchSelected.isEmpty()) {

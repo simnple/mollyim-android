@@ -1,7 +1,7 @@
 package org.thoughtcrime.securesms.components.settings.conversation
 
-import android.os.Bundle
-import android.view.View
+import android.content.Context
+import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,23 +19,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import org.signal.core.ui.compose.Buttons
+import org.signal.core.ui.compose.CircularProgressWrapper
 import org.signal.core.ui.compose.ComposeFragment
 import org.signal.core.ui.compose.Rows
 import org.signal.core.ui.compose.Scaffolds
 import org.signal.core.ui.compose.SignalIcons
+import org.signal.core.ui.compose.horizontalGutters
 import org.signal.core.ui.compose.theme.SignalTheme
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.util.TextSecurePreferences
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 /**
  * Custom fork: full-screen settings for the per-conversation "메시지 전송 시간"
  * (send-time spoofing). Presets match the auto-delete message times; "직접 입력"
- * opens date + time pickers (like scheduling a message). Save writes the pref.
+ * opens the Molly date + time pickers. Save writes the pref.
  */
 class MessageSendTimeSettingsFragment : ComposeFragment() {
 
   private val args: MessageSendTimeSettingsFragmentArgs by navArgs()
+
+  private var pendingUtcDateMillis: Long = System.currentTimeMillis()
+  private var pendingHour: Int = 0
+  private var pendingMinute: Int = 0
 
   @Composable
   override fun FragmentContent() {
@@ -92,51 +105,82 @@ class MessageSendTimeSettingsFragment : ComposeFragment() {
               Rows.RadioRow(
                 selected = hasCustom,
                 text = stringResource(R.string.TimestampDialog__custom),
-                label = if (hasCustom) android.text.format.DateFormat.getTimeFormat(context).format(selection + System.currentTimeMillis()) else null,
-                modifier = Modifier.clickable { showCustom(context, threadId) { offset -> selection = offset } },
+                label = if (hasCustom) formatCustomOffset(context, selection) else null,
+                modifier = Modifier.clickable { showCustomDatePicker(context, selection) { offset -> selection = offset } },
                 enabled = true
               )
             }
           }
 
-          Buttons.LargeTonal(
-            onClick = {
-              TextSecurePreferences.setTimestampOffsetMillisForThread(requireContext(), threadId, selection)
-              requireActivity().onBackPressedDispatcher.onBackPressed()
-            },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 16.dp)
+          CircularProgressWrapper(
+            isLoading = false,
+            modifier = Modifier
+              .align(Alignment.BottomEnd)
+              .horizontalGutters()
+              .padding(bottom = 16.dp)
           ) {
-            Text(text = stringResource(R.string.ExpireTimerSettingsFragment__save))
+            Buttons.LargeTonal(
+              onClick = {
+                TextSecurePreferences.setTimestampOffsetMillisForThread(requireContext(), threadId, selection)
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+              },
+              enabled = true
+            ) {
+              Text(text = stringResource(R.string.ExpireTimerSettingsFragment__save))
+            }
           }
         }
       }
     }
   }
 
-  private fun showCustom(context: android.content.Context, threadId: Long, onPicked: (Long) -> Unit) {
-    val cal = java.util.Calendar.getInstance()
+  private fun showCustomDatePicker(context: Context, selection: Long, onPicked: (Long) -> Unit) {
+    val target = if (selection == 0L) System.currentTimeMillis() else selection + System.currentTimeMillis()
 
-    val onTime = object : android.app.TimePickerDialog.OnTimeSetListener {
-      override fun onTimeSet(view: android.widget.TimePicker, hourOfDay: Int, minute: Int) {
-        cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
-        cal.set(java.util.Calendar.MINUTE, minute)
-        cal.set(java.util.Calendar.SECOND, 0)
-        cal.set(java.util.Calendar.MILLISECOND, 0)
-        onPicked(minOf(cal.timeInMillis - System.currentTimeMillis(), 0L))
-      }
+    val localDateTime = Instant.ofEpochMilli(target).atZone(ZoneId.systemDefault()).toLocalDateTime()
+    pendingHour = localDateTime.hour
+    pendingMinute = localDateTime.minute
+    pendingUtcDateMillis = localDateTime.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+    val datePicker = MaterialDatePicker.Builder.datePicker()
+      .setTitleText(R.string.ScheduleMessageTimePickerBottomSheet__select_date_title)
+      .setSelection(pendingUtcDateMillis)
+      .build()
+
+    datePicker.addOnPositiveButtonClickListener { utcMillis ->
+      pendingUtcDateMillis = utcMillis
+      showCustomTimePicker(context, onPicked)
     }
 
-    android.app.DatePickerDialog(
-      context,
-      { _, year, month, dayOfMonth ->
-        cal.set(java.util.Calendar.YEAR, year)
-        cal.set(java.util.Calendar.MONTH, month)
-        cal.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
-        android.app.TimePickerDialog(context, onTime, cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE), true).show()
-      },
-      cal.get(java.util.Calendar.YEAR),
-      cal.get(java.util.Calendar.MONTH),
-      cal.get(java.util.Calendar.DAY_OF_MONTH)
-    ).show()
+    datePicker.show(childFragmentManager, "DATE_PICKER")
+  }
+
+  private fun showCustomTimePicker(context: Context, onPicked: (Long) -> Unit) {
+    val timeFormat = if (DateFormat.is24HourFormat(context)) TimeFormat.CLOCK_24H else TimeFormat.CLOCK_12H
+
+    val timePicker = MaterialTimePicker.Builder()
+      .setTimeFormat(timeFormat)
+      .setHour(pendingHour)
+      .setMinute(pendingMinute)
+      .setTitleText(R.string.ScheduleMessageTimePickerBottomSheet__select_time_title)
+      .build()
+
+    timePicker.addOnPositiveButtonClickListener {
+      pendingHour = timePicker.hour
+      pendingMinute = timePicker.minute
+
+      val selectedDate: LocalDate = Instant.ofEpochMilli(pendingUtcDateMillis).atZone(ZoneOffset.UTC).toLocalDate()
+      val target = selectedDate.atTime(pendingHour, pendingMinute).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+      onPicked(minOf(target - System.currentTimeMillis(), 0L))
+    }
+
+    timePicker.show(childFragmentManager, "TIME_PICKER")
+  }
+
+  private fun formatCustomOffset(context: Context, offset: Long): String {
+    val target = offset + System.currentTimeMillis()
+    val dateFormat = DateFormat.getDateFormat(context)
+    val timeFormat = DateFormat.getTimeFormat(context)
+    return "${dateFormat.format(target)} $timeFormat.format(target)"
   }
 }

@@ -438,35 +438,36 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
 
     val bodyText = StringUtil.trim(styledText)
 
-    // Show the body when it has text, or (custom fork) when the retained message is marked as
-    // deleted/expired so the (삭제됨)/(만료됨) label is visible even on captionless media/stickers.
+    // Custom fork: retained deleted-for-everyone / expired messages keep their body visible (struck
+    // through), but the (삭제됨)/(만료됨) status is shown in the footer next to the timestamp.
     val marked = record.isMarkedDeleted() || record.isMarkedExpired()
     binding.body.visible = bodyText.isNotEmpty() || marked
-    binding.body.text = if (bodyText.isNotEmpty() || marked) buildMarkedBody(record, bodyText) else bodyText
+    binding.body.text = if (bodyText.isNotEmpty()) {
+      if (marked) strikeThroughBody(bodyText) else bodyText
+    } else {
+      bodyText
+    }
   }
 
   /**
-   * Custom fork: for retained deleted-for-everyone / expired messages, strike through the original
-   * body and append a grey-italic status label after it.
+   * Custom fork: strike through the retained body of a deleted-for-everyone / expired message.
    */
-  private fun buildMarkedBody(record: MessageRecord, bodyText: CharSequence): CharSequence {
+  private fun strikeThroughBody(bodyText: CharSequence): CharSequence {
+    val builder = SpannableStringBuilder(bodyText)
+    builder.setSpan(StrikethroughSpan(), 0, bodyText.length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+    return builder
+  }
+
+  /**
+   * Custom fork: localized status label for deleted/expired messages, e.g. "(삭제됨)"/"(만료됨)".
+   */
+  private fun markedFooterLabel(record: MessageRecord): String? {
     val ko = Locale.getDefault().language == "ko"
-    val bareLabel = when {
+    return when {
       record.isMarkedDeleted() -> if (ko) "(삭제됨)" else "(deleted)"
       record.isMarkedExpired() -> if (ko) "(만료됨)" else "(expired)"
       else -> null
-    } ?: return bodyText
-    val label = if (bodyText.isNotEmpty()) " $bareLabel" else bareLabel
-
-    val builder = SpannableStringBuilder(bodyText)
-    builder.setSpan(StrikethroughSpan(), 0, bodyText.length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
-
-    val start = builder.length
-    builder.append(label)
-    builder.setSpan(ForegroundColorSpan(themeDelegate.getFooterForegroundColor(conversationMessage)), start, builder.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-    builder.setSpan(StyleSpan(Typeface.ITALIC), start, builder.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-
-    return builder
+    }
   }
 
   private fun linkifyMessageBody(messageBody: Spannable) {
@@ -813,8 +814,18 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
         }
       }
 
-      binding.footerDate.text = dateLabel
-      binding.footerDate.contentDescription = dateLabelContentDesc
+      val markedLabel = markedFooterLabel(record)
+      if (markedLabel != null) {
+        val builder = SpannableStringBuilder(markedLabel)
+        builder.setSpan(StyleSpan(Typeface.ITALIC), 0, builder.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        builder.append(" ")
+        builder.append(dateLabel)
+        binding.footerDate.text = builder
+        binding.footerDate.contentDescription = "$markedLabel $dateLabelContentDesc"
+      } else {
+        binding.footerDate.text = dateLabel
+        binding.footerDate.contentDescription = dateLabelContentDesc
+      }
     }
   }
 

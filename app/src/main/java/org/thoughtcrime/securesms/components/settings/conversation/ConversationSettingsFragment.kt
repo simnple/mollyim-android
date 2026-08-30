@@ -233,6 +233,11 @@ class ConversationSettingsFragment :
     recyclerView?.addOnScrollListener(ConversationSettingsOnUserScrolledAnimationHelper(toolbarAvatarContainer, toolbarTitle, toolbarBackground))
   }
 
+  override fun onResume() {
+    super.onResume()
+    resubmitSettingsList()
+  }
+
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     when (requestCode) {
       REQUEST_CODE_ADD_MEMBERS_TO_GROUP -> if (data != null) {

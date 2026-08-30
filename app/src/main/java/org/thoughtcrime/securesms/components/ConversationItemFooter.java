@@ -6,6 +6,10 @@ import android.content.res.TypedArray;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.StyleSpan;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -337,8 +341,26 @@ public class ConversationItemFooter extends ConstraintLayout {
           dateLabelContentDesc = dateLabel;
         }
       }
-      dateView.setText(dateLabel);
-      dateView.setContentDescription(dateLabelContentDesc);
+
+      // Custom fork: prepend the deleted/expired status before the timestamp so it reads like
+      // "(삭제됨) 오전 9:42" / "(만료됨) 2분 전" instead of being inlined into the message body.
+      String markedLabel = null;
+      if (messageRecord.isMarkedExpired()) {
+        markedLabel = "ko".equals(Locale.getDefault().getLanguage()) ? "(만료됨)" : "(expired)";
+      } else if (messageRecord.isMarkedDeleted()) {
+        markedLabel = "ko".equals(Locale.getDefault().getLanguage()) ? "(삭제됨)" : "(deleted)";
+      }
+      if (markedLabel != null) {
+        SpannableStringBuilder builder = new SpannableStringBuilder(markedLabel);
+        builder.setSpan(new StyleSpan(Typeface.ITALIC), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        builder.append(" ");
+        builder.append(dateLabel);
+        dateView.setText(builder);
+        dateView.setContentDescription(markedLabel + " " + dateLabelContentDesc);
+      } else {
+        dateView.setText(dateLabel);
+        dateView.setContentDescription(dateLabelContentDesc);
+      }
     }
   }
 

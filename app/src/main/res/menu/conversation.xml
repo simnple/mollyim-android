@@ -43,10 +43,6 @@
         android:checkable="true" />
 
     <item
-        android:id="@+id/menu_mention_crash_test"
-        android:title="@string/conversation__menu_mention_crash_test" />
-
-    <item
         android:id="@+id/menu_format_text_submenu"
         android:title="@string/conversation__menu_format_text"
         android:orderInCategory="9999">

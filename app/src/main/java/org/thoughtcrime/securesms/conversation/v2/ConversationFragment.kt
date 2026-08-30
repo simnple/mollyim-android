@@ -32,7 +32,6 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import android.text.Editable
 import android.text.InputType
-import android.text.SpannableStringBuilder
 import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.Menu
@@ -4715,18 +4714,6 @@ class ConversationFragment :
       TextSecurePreferences.setEchoEnabledForThread(requireContext(), threadId, newState)
       toast(if (newState) R.string.Echo__toast_on else R.string.Echo__toast_off)
       requireActivity().invalidateOptionsMenu()
-    }
-
-    override fun handleMentionCrashTest() {
-      val result = try {
-        val body = SpannableStringBuilder("a")
-        val mentions = listOf(Mention(RecipientId.from(1L), 0, Int.MAX_VALUE))
-        MentionAnnotation.setMentionAnnotations(body, mentions)
-        R.string.conversation__mention_test_safe
-      } catch (e: IndexOutOfBoundsException) {
-        R.string.conversation__mention_test_crash
-      }
-      toast(result)
     }
 
   }
