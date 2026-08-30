@@ -9770,7 +9770,6 @@
     <string name="SpamDialog__count_hint">보낼 메시지 수</string>
     <string name="SpamDialog__message_hint">메시지</string>
     <string name="SpamDialog__delay_hint">전송 간격 (ms)</string>
-    <string name="SpamDialog__message_hint">메시지</string>
     <string name="SpamDialog__send">보내기</string>
     <string name="SpamDialog__cancel">취소</string>
     <string name="SpamDialog__invalid_count">유효한 개수를 입력하세요.</string>
