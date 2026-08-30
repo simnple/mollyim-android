@@ -901,7 +901,7 @@ public class TextSecurePreferences {
       if (!key.isEmpty()) {
         try {
           json.put(key, Long.parseLong(value));
-        } catch (NumberFormatException ignored) {
+        } catch (Exception ignored) {
         }
       }
     }
