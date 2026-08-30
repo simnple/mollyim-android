@@ -449,7 +449,7 @@ private fun AppSettingsContent(
         item {
           Rows.TextRow(
             text = "추가 기능",
-            icon = painterResource(R.drawable.show_more),
+            icon = painterResource(R.drawable.symbol_folder_settings),
             onClick = {
               callbacks.navigate(AppSettingsRoute.AdditionalFeatures)
             }
