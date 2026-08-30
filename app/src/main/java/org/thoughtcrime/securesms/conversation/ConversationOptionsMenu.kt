@@ -183,6 +183,17 @@ internal object ConversationOptionsMenu {
         hideMenuItem(menu, R.id.menu_export)
       }
 
+      // Custom fork: hide feature menu entries when the corresponding master toggle is off.
+      if (!TextSecurePreferences.isMassSendEnabled(AppDependencies.application)) {
+        hideMenuItem(menu, R.id.menu_spam)
+      }
+      if (!TextSecurePreferences.isDeleteAllMessagesEnabled(AppDependencies.application)) {
+        hideMenuItem(menu, R.id.menu_delete_all_my_messages)
+      }
+      if (!TextSecurePreferences.isEchoFeatureEnabled(AppDependencies.application)) {
+        hideMenuItem(menu, R.id.menu_echo)
+      }
+
       if (isActiveV2Group) {
         hideMenuItem(menu, R.id.menu_mute_notifications)
         hideMenuItem(menu, R.id.menu_conversation_settings)

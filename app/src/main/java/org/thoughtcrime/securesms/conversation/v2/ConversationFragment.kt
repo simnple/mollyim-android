@@ -4666,6 +4666,10 @@ class ConversationFragment :
     }
 
     override fun handleDeleteAllMyMessages() {
+      if (!TextSecurePreferences.isDeleteAllMessagesEnabled(requireContext())) {
+        return
+      }
+
       val threadId = args.threadId
 
       val dispose = SignalExecutors.BOUNDED.submit {

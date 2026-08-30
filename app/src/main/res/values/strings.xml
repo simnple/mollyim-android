@@ -10049,6 +10049,8 @@
     <string name="AdditionalFeatures__asymmetric_read_receipts_desc">Keep seeing others\' read receipts even when your read receipts are off, while never sending your own.</string>
     <string name="AdditionalFeatures__see_typing">See typing even when typing-off</string>
     <string name="AdditionalFeatures__see_typing_desc">Keep seeing others\' typing indicators even when your typing indicators are off.</string>
+    <string name="AdditionalFeatures__delete_all_messages">Delete all my messages</string>
+    <string name="AdditionalFeatures__delete_all_messages_desc">Enables the \'delete all my messages\' option in the conversation menu.</string>
     <string name="AdditionalFeatures__export">Export settings to JSON</string>
     <string name="AdditionalFeatures__import">Import settings from JSON</string>
 

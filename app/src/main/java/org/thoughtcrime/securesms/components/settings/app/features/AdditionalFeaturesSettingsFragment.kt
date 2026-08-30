@@ -44,6 +44,7 @@ class AdditionalFeaturesSettingsFragment : ComposeFragment() {
     var showDeletedEnabled by remember { mutableStateOf(TextSecurePreferences.isShowDeletedMessagesEnabled(requireContext())) }
     var asymmetricReadReceiptsEnabled by remember { mutableStateOf(TextSecurePreferences.isAsymmetricReadReceiptsEnabled(requireContext())) }
     var seeTypingEnabled by remember { mutableStateOf(TextSecurePreferences.isSeeTypingEnabled(requireContext())) }
+    var deleteAllMessagesEnabled by remember { mutableStateOf(TextSecurePreferences.isDeleteAllMessagesEnabled(requireContext())) }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
       uri?.let {
@@ -60,6 +61,7 @@ class AdditionalFeaturesSettingsFragment : ComposeFragment() {
           showDeletedEnabled = TextSecurePreferences.isShowDeletedMessagesEnabled(context)
           asymmetricReadReceiptsEnabled = TextSecurePreferences.isAsymmetricReadReceiptsEnabled(context)
           seeTypingEnabled = TextSecurePreferences.isSeeTypingEnabled(context)
+          deleteAllMessagesEnabled = TextSecurePreferences.isDeleteAllMessagesEnabled(context)
         }
       }
     }
@@ -172,6 +174,18 @@ class AdditionalFeaturesSettingsFragment : ComposeFragment() {
               onCheckChanged = { checked ->
                 seeTypingEnabled = checked
                 TextSecurePreferences.setSeeTypingEnabled(context, checked)
+              }
+            )
+          }
+
+          item {
+            Rows.ToggleRow(
+              checked = deleteAllMessagesEnabled,
+              text = stringResource(R.string.AdditionalFeatures__delete_all_messages),
+              label = stringResource(R.string.AdditionalFeatures__delete_all_messages_desc),
+              onCheckChanged = { checked ->
+                deleteAllMessagesEnabled = checked
+                TextSecurePreferences.setDeleteAllMessagesEnabled(context, checked)
               }
             )
           }

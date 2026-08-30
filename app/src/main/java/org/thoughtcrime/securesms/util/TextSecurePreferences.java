@@ -753,6 +753,7 @@ public class TextSecurePreferences {
   private static final String FEATURE_SHOW_DELETED    = "pref_feature_show_deleted";
   private static final String FEATURE_ASYM_READ       = "pref_feature_asymmetric_read_receipts";
   private static final String FEATURE_SEE_TYPING      = "pref_feature_see_typing";
+  private static final String FEATURE_DELETE_ALL      = "pref_feature_delete_all_messages";
 
   public static boolean isForceExpiryEnabled(@NonNull Context context) {
     return getBooleanPreference(context, FEATURE_FORCE_EXPIRY, true);
@@ -810,6 +811,14 @@ public class TextSecurePreferences {
     setBooleanPreference(context, FEATURE_SEE_TYPING, value);
   }
 
+  public static boolean isDeleteAllMessagesEnabled(@NonNull Context context) {
+    return getBooleanPreference(context, FEATURE_DELETE_ALL, true);
+  }
+
+  public static void setDeleteAllMessagesEnabled(@NonNull Context context, boolean value) {
+    setBooleanPreference(context, FEATURE_DELETE_ALL, value);
+  }
+
   // Custom fork: export all additional settings (master switches + per-thread data) as JSON so the
   // user can back them up / move them to another device.
   public static String exportAdditionalSettingsJson(@NonNull Context context) {
@@ -824,6 +833,7 @@ public class TextSecurePreferences {
       json.put("show_deleted", isShowDeletedMessagesEnabled(context));
       json.put("asymmetric_read_receipts", isAsymmetricReadReceiptsEnabled(context));
       json.put("see_typing", isSeeTypingEnabled(context));
+      json.put("delete_all_messages", isDeleteAllMessagesEnabled(context));
 
       json.put("echo_threads", new JSONArray(splitCsv(getStringPreference(context, ECHO_ENABLED, ""))));
       json.put("expiry_overrides", mapToJson(getStringPreference(context, EXPIRY_OVERRIDE_SECONDS, "")));
@@ -845,6 +855,7 @@ public class TextSecurePreferences {
       setShowDeletedMessagesEnabled(context, root.optBoolean("show_deleted", true));
       setAsymmetricReadReceiptsEnabled(context, root.optBoolean("asymmetric_read_receipts", true));
       setSeeTypingEnabled(context, root.optBoolean("see_typing", true));
+      setDeleteAllMessagesEnabled(context, root.optBoolean("delete_all_messages", true));
 
       JSONArray echoThreads = root.optJSONArray("echo_threads");
       if (echoThreads != null) {

@@ -1774,7 +1774,10 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
   }
 
   private void setPoll(@NonNull MessageRecord messageRecord, int chatColor) {
-    if (hasPoll(messageRecord)) {
+    boolean showDeletedPoll = messageRecord.isMarkedExpired() ||
+                              !messageRecord.isMarkedDeleted() ||
+                              TextSecurePreferences.isShowDeletedMessagesEnabled(context);
+    if (hasPoll(messageRecord) && showDeletedPoll) {
       PollRecord poll = MessageRecordUtil.getPoll(messageRecord);
       PollComponentKt.setContent(pollView.get(), poll, isOutgoing(), chatColor, () -> {
         if (eventListener != null && batchSelected.isEmpty()) {

@@ -654,9 +654,13 @@ class ConversationSettingsFragment :
       }
 
       if (!state.recipient.isSelf) {
-        dividerPref()
+        val forceExpiryEnabled = TextSecurePreferences.isForceExpiryEnabled(requireContext())
+        val timestampSpoofEnabled = TextSecurePreferences.isTimestampSpoofEnabled(requireContext())
+        if (forceExpiryEnabled || timestampSpoofEnabled) {
+          dividerPref()
+        }
 
-        if (TextSecurePreferences.isForceExpiryEnabled(requireContext())) {
+        if (forceExpiryEnabled) {
           val expirySeconds = TextSecurePreferences.getExpiryOverrideSecondsForThread(requireContext(), state.threadId)
           val expirySummary = if (expirySeconds == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
             getString(R.string.ExpiryDialog__follow_room)
@@ -675,7 +679,7 @@ class ConversationSettingsFragment :
           )
         }
 
-        if (TextSecurePreferences.isTimestampSpoofEnabled(requireContext())) {
+        if (timestampSpoofEnabled) {
           val tsOffset = TextSecurePreferences.getTimestampOffsetMillisForThread(requireContext(), state.threadId)
           val tsSummary = formatTimestampSummary(tsOffset)
 
