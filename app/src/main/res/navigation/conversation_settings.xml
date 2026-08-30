@@ -37,6 +37,32 @@
                 app:nullable="true" />
         </action>
 
+        <action
+            android:id="@+id/action_conversationSettingsFragment_to_forceExpirySettingsFragment"
+            app:destination="@id/forceExpirySettingsFragment"
+            app:enterAnim="@anim/fragment_open_enter"
+            app:exitAnim="@anim/fragment_open_exit"
+            app:popEnterAnim="@anim/fragment_close_enter"
+            app:popExitAnim="@anim/fragment_close_exit">
+
+            <argument
+                android:name="thread_id"
+                app:argType="long" />
+        </action>
+
+        <action
+            android:id="@+id/action_conversationSettingsFragment_to_messageSendTimeSettingsFragment"
+            app:destination="@id/messageSendTimeSettingsFragment"
+            app:enterAnim="@anim/fragment_open_enter"
+            app:exitAnim="@anim/fragment_open_exit"
+            app:popEnterAnim="@anim/fragment_close_enter"
+            app:popExitAnim="@anim/fragment_close_exit">
+
+            <argument
+                android:name="thread_id"
+                app:argType="long" />
+        </action>
+
         <argument
             android:name="recipient_id"
             app:argType="org.thoughtcrime.securesms.recipients.RecipientId"
@@ -253,5 +279,23 @@
     </fragment>
 
     <include app:graph="@navigation/app_settings_expire_timer" />
+
+    <fragment
+        android:id="@+id/forceExpirySettingsFragment"
+        android:name="org.thoughtcrime.securesms.components.settings.conversation.ForceExpirySettingsFragment"
+        tools:layout="@layout/dsl_settings_fragment">
+        <argument
+            android:name="thread_id"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/messageSendTimeSettingsFragment"
+        android:name="org.thoughtcrime.securesms.components.settings.conversation.MessageSendTimeSettingsFragment"
+        tools:layout="@layout/dsl_settings_fragment">
+        <argument
+            android:name="thread_id"
+            app:argType="long" />
+    </fragment>
 
 </navigation>

@@ -9974,11 +9974,11 @@
     <string name="RecoveryKeyWarningDialog__dont_share">Don\'t share</string>
 
     <!-- Custom fork: spam (mass send) -->
-    <string name="conversation__menu_spam">Spam (mass send)</string>
+    <string name="conversation__menu_spam">Mass send (bulk)</string>
     <string name="SpamDialog__title">Mass send</string>
-    <string name="SpamDialog__count_hint">How many?</string>
+    <string name="SpamDialog__count_hint">Number of messages to send</string>
     <string name="SpamDialog__message_hint">Message</string>
-    <string name="SpamDialog__delay_hint">Delay between (ms, 0 = none)</string>
+    <string name="SpamDialog__delay_hint">Send interval (ms)</string>
     <string name="SpamDialog__send">Send</string>
     <string name="SpamDialog__cancel">Cancel</string>
     <string name="SpamDialog__invalid_count">Enter a valid number of copies.</string>
@@ -10023,7 +10023,7 @@
     <string name="TimestampDialog__today_midnight">Earlier today (midnight)</string>
     <string name="TimestampDialog__yesterday">Yesterday, same time</string>
     <string name="TimestampDialog__3_days">3 days earlier</string>
-    <string name="TimestampDialog__custom">Custom date &amp; time…</string>
+    <string name="TimestampDialog__custom">Custom input</string>
     <string name="TimestampDialog__cancel">Cancel</string>
     <string name="TimestampDialog__toast_off">Timestamp spoofing off</string>
     <string name="TimestampDialog__toast_on">Timestamp spoofing on (%1$s)</string>

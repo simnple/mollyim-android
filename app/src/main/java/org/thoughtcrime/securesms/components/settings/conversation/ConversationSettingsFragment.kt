@@ -665,14 +665,20 @@ class ConversationSettingsFragment :
           title = DSLSettingsText.from(R.string.ConversationSettingsFragment__force_disappearing_messages),
           summary = DSLSettingsText.from(expirySummary),
           icon = DSLSettingsIcon.from(R.drawable.symbol_timer_24),
-          onClick = { showExpiryOverrideDialog(state.threadId) { resubmitSettingsList() } }
+          onClick = {
+            val action = ConversationSettingsFragmentDirections.actionConversationSettingsFragmentToForceExpirySettingsFragment(state.threadId)
+            navController.safeNavigate(action)
+          }
         )
 
         clickPref(
           title = DSLSettingsText.from(R.string.ConversationSettingsFragment__message_timestamp_spoof),
           summary = DSLSettingsText.from(tsSummary),
           icon = DSLSettingsIcon.from(CoreUiR.drawable.symbol_edit_24),
-          onClick = { showTimestampSpoofDialog(state.threadId) { resubmitSettingsList() } }
+          onClick = {
+            val action = ConversationSettingsFragmentDirections.actionConversationSettingsFragmentToMessageSendTimeSettingsFragment(state.threadId)
+            navController.safeNavigate(action)
+          }
         )
       }
 

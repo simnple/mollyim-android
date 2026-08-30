@@ -9765,10 +9765,11 @@
     <string name="RecoveryKeyWarningDialog__dont_share">복구 키 공유하지 않기</string>
 
     <!-- Custom fork: spam (mass send) -->
-    <string name="conversation__menu_spam">도배 (대량 전송)</string>
+    <string name="conversation__menu_spam">대량 전송</string>
     <string name="SpamDialog__title">대량 전송</string>
-    <string name="SpamDialog__count_hint">몇 개?</string>
-    <string name="SpamDialog__delay_hint">전송 간격 (ms, 0 = 없음)</string>
+    <string name="SpamDialog__count_hint">보낼 메시지 수</string>
+    <string name="SpamDialog__message_hint">메시지</string>
+    <string name="SpamDialog__delay_hint">전송 간격 (ms)</string>
     <string name="SpamDialog__message_hint">메시지</string>
     <string name="SpamDialog__send">보내기</string>
     <string name="SpamDialog__cancel">취소</string>
@@ -9814,7 +9815,7 @@
     <string name="TimestampDialog__today_midnight">오늘 자정 시각으로</string>
     <string name="TimestampDialog__yesterday">어제 같은 시각</string>
     <string name="TimestampDialog__3_days">3일 전</string>
-    <string name="TimestampDialog__custom">직접 날짜·시각 입력…</string>
+    <string name="TimestampDialog__custom">직접 입력</string>
     <string name="TimestampDialog__cancel">취소</string>
     <string name="TimestampDialog__toast_off">타임스탬프 위조 끔</string>
     <string name="TimestampDialog__toast_on">타임스탬프 위조 켬 (%1$s)</string>
