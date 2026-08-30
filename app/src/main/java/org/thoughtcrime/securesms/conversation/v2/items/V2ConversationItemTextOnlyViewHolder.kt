@@ -17,7 +17,6 @@ import android.text.style.CharacterStyle
 import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
-import android.text.style.StyleSpan
 import android.text.style.URLSpan
 import android.util.TypedValue
 import android.view.GestureDetector
@@ -816,11 +815,7 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
 
       val markedLabel = markedFooterLabel(record)
       if (markedLabel != null) {
-        val builder = SpannableStringBuilder(markedLabel)
-        builder.setSpan(StyleSpan(Typeface.ITALIC), 0, builder.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        builder.append(" ")
-        builder.append(dateLabel)
-        binding.footerDate.text = builder
+        binding.footerDate.text = "$markedLabel $dateLabel"
         binding.footerDate.contentDescription = "$markedLabel $dateLabelContentDesc"
       } else {
         binding.footerDate.text = dateLabel

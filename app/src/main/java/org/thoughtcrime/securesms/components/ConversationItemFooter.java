@@ -6,10 +6,6 @@ import android.content.res.TypedArray;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
-import android.graphics.Typeface;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.style.StyleSpan;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -351,11 +347,7 @@ public class ConversationItemFooter extends ConstraintLayout {
         markedLabel = "ko".equals(Locale.getDefault().getLanguage()) ? "(삭제됨)" : "(deleted)";
       }
       if (markedLabel != null) {
-        SpannableStringBuilder builder = new SpannableStringBuilder(markedLabel);
-        builder.setSpan(new StyleSpan(Typeface.ITALIC), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        builder.append(" ");
-        builder.append(dateLabel);
-        dateView.setText(builder);
+        dateView.setText(markedLabel + " " + dateLabel);
         dateView.setContentDescription(markedLabel + " " + dateLabelContentDesc);
       } else {
         dateView.setText(dateLabel);

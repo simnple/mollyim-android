@@ -1367,7 +1367,12 @@ class ConversationSettingsFragment :
 
       -4 * 7 * 24 * 60 * 60_000L -> getString(R.string.ExpireTimerSettingsFragment__4_weeks)
 
-      else -> getString(R.string.TimestampDialog__custom)
+      else -> {
+        val target = offset + System.currentTimeMillis()
+        val dateFormat = android.text.format.DateFormat.getDateFormat(requireContext())
+        val timeFormat = android.text.format.DateFormat.getTimeFormat(requireContext())
+        "${dateFormat.format(target)} ${timeFormat.format(target)}"
+      }
     }
   }
 

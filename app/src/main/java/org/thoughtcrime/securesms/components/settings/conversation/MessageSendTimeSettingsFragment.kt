@@ -181,6 +181,6 @@ class MessageSendTimeSettingsFragment : ComposeFragment() {
     val target = offset + System.currentTimeMillis()
     val dateFormat = DateFormat.getDateFormat(context)
     val timeFormat = DateFormat.getTimeFormat(context)
-    return "${dateFormat.format(target)} $timeFormat.format(target)"
+    return "${dateFormat.format(target)} ${timeFormat.format(target)}"
   }
 }
