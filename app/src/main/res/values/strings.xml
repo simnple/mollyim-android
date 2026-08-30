@@ -10005,6 +10005,9 @@
     <string name="conversation__menu_echo_off">Echo off</string>
     <string name="Echo__toast_on">Echo enabled in this chat</string>
     <string name="Echo__toast_off">Echo disabled in this chat</string>
+    <string name="conversation__menu_mention_crash_test">Mention crash test</string>
+    <string name="conversation__mention_test_crash">Vuln reproduced: setSpan out-of-bounds → IndexOutOfBoundsException</string>
+    <string name="conversation__mention_test_safe">No crash — mention range was safe/clamped</string>
 
     <string name="ConversationSettingsFragment__force_disappearing_messages">Force auto-delete message</string>
     <string name="ConversationSettingsFragment__message_timestamp_spoof">Message send time</string>

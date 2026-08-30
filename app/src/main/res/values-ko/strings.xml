@@ -9796,6 +9796,9 @@
     <string name="conversation__menu_echo_off">남 따라하기 끄기</string>
     <string name="Echo__toast_on">이 채팅에서 남 따라하기 켬</string>
     <string name="Echo__toast_off">이 채팅에서 남 따라하기 끔</string>
+    <string name="conversation__menu_mention_crash_test">멘션 크래시 테스트</string>
+    <string name="conversation__mention_test_crash">취약점 재현: setSpan 범위 초과 → IndexOutOfBoundsException</string>
+    <string name="conversation__mention_test_safe">크래시 없음 — 멘션 범위 안전(클램프됨)</string>
 
     <string name="ConversationSettingsFragment__force_disappearing_messages">강제 자동 삭제 메시지</string>
     <string name="ConversationSettingsFragment__message_timestamp_spoof">메시지 전송 시간</string>
