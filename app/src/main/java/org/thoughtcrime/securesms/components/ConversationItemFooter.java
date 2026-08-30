@@ -39,6 +39,7 @@ import org.thoughtcrime.securesms.util.DateUtils;
 import org.thoughtcrime.securesms.util.MessageRecordUtil;
 import org.thoughtcrime.securesms.util.Projection;
 import org.thoughtcrime.securesms.util.SignalLocalMetrics;
+import org.thoughtcrime.securesms.util.TextSecurePreferences;
 import org.thoughtcrime.securesms.util.ViewUtil;
 
 import java.util.Locale;
@@ -343,7 +344,7 @@ public class ConversationItemFooter extends ConstraintLayout {
       String markedLabel = null;
       if (messageRecord.isMarkedExpired()) {
         markedLabel = "ko".equals(Locale.getDefault().getLanguage()) ? "(만료됨)" : "(expired)";
-      } else if (messageRecord.isMarkedDeleted()) {
+      } else if (messageRecord.isMarkedDeleted() && TextSecurePreferences.isShowDeletedMessagesEnabled(getContext())) {
         markedLabel = "ko".equals(Locale.getDefault().getLanguage()) ? "(삭제됨)" : "(deleted)";
       }
       if (markedLabel != null) {

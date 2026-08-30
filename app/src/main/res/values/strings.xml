@@ -10043,6 +10043,12 @@
     <string name="AdditionalFeatures__show_blocked_desc">Show messages from blocked senders in the chat.</string>
     <string name="AdditionalFeatures__mass_send">Mass send</string>
     <string name="AdditionalFeatures__mass_send_desc">Enables the mass-send dialog that sends several messages in a row.</string>
+    <string name="AdditionalFeatures__show_deleted">View deleted messages</string>
+    <string name="AdditionalFeatures__show_deleted_desc">Keep deleted-for-everyone message content visible instead of a generic "deleted" notice.</string>
+    <string name="AdditionalFeatures__asymmetric_read_receipts">See read receipts even when read-off</string>
+    <string name="AdditionalFeatures__asymmetric_read_receipts_desc">Keep seeing others\' read receipts even when your read receipts are off, while never sending your own.</string>
+    <string name="AdditionalFeatures__see_typing">See typing even when typing-off</string>
+    <string name="AdditionalFeatures__see_typing_desc">Keep seeing others\' typing indicators even when your typing indicators are off.</string>
     <string name="AdditionalFeatures__export">Export settings to JSON</string>
     <string name="AdditionalFeatures__import">Import settings from JSON</string>
 

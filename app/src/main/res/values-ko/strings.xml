@@ -9834,6 +9834,12 @@
     <string name="AdditionalFeatures__show_blocked_desc">차단한 발신자의 메시지도 대화에 표시합니다.</string>
     <string name="AdditionalFeatures__mass_send">대량 전송</string>
     <string name="AdditionalFeatures__mass_send_desc">여러 메시지를 연속으로 보내는 대량 전송 대화상자를 사용합니다.</string>
+    <string name="AdditionalFeatures__show_deleted">삭제된 메시지 보기</string>
+    <string name="AdditionalFeatures__show_deleted_desc">모두 삭제된 메시지의 내용을 일반적인 \'삭제됨\' 알림 대신 계속 표시합니다.</string>
+    <string name="AdditionalFeatures__asymmetric_read_receipts">읽음 꺼도 읽음 보기</string>
+    <string name="AdditionalFeatures__asymmetric_read_receipts_desc">내 읽음표시가 꺼져 있어도 상대방의 읽음 표시를 계속 보여주고, 내 읽음 표시는 보내지 않습니다.</string>
+    <string name="AdditionalFeatures__see_typing">입력중 꺼도 입력중 보기</string>
+    <string name="AdditionalFeatures__see_typing_desc">내 입력중 표시가 꺼져 있어도 상대방의 입력중 표시를 계속 볼 수 있습니다.</string>
     <string name="AdditionalFeatures__export">설정을 JSON으로 내보내기</string>
     <string name="AdditionalFeatures__import">설정을 JSON에서 가져오기</string>
 

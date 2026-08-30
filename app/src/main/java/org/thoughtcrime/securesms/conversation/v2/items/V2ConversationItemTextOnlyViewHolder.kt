@@ -45,6 +45,7 @@ import org.thoughtcrime.securesms.conversation.v2.data.ConversationMessageElemen
 import org.thoughtcrime.securesms.database.model.MessageRecord
 import org.thoughtcrime.securesms.database.model.MmsMessageRecord
 import org.thoughtcrime.securesms.dependencies.AppDependencies
+import org.thoughtcrime.securesms.util.TextSecurePreferences
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.RecipientId
@@ -439,10 +440,15 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
 
     // Custom fork: retained deleted-for-everyone / expired messages keep their body struck through,
     // but the (삭제됨)/(만료됨) status is shown in the footer next to the timestamp. Only show the
-    // body when it has content so captionless media/stickers don't leave an empty text box.
-    val marked = record.isMarkedDeleted() || record.isMarkedExpired()
-    binding.body.visible = bodyText.isNotEmpty()
-    binding.body.text = if (bodyText.isNotEmpty() && marked) strikeThroughBody(bodyText) else bodyText
+    // body when it has content so captionless media/stickers don't leave an empty text box. When
+    // "view deleted messages" is off, a deleted message's body is hidden entirely.
+    val isDeleted = record.isMarkedDeleted()
+    val isExpired = record.isMarkedExpired()
+    val showDeleted = TextSecurePreferences.isShowDeletedMessagesEnabled(context)
+    val strike = isExpired || (isDeleted && showDeleted)
+    val showBody = bodyText.isNotEmpty() && (!isDeleted || showDeleted)
+    binding.body.visible = showBody
+    binding.body.text = if (showBody && strike) strikeThroughBody(bodyText) else bodyText
   }
 
   /**
@@ -460,7 +466,7 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
   private fun markedFooterLabel(record: MessageRecord): String? {
     val ko = Locale.getDefault().language == "ko"
     return when {
-      record.isMarkedDeleted() -> if (ko) "(삭제됨)" else "(deleted)"
+      record.isMarkedDeleted() && TextSecurePreferences.isShowDeletedMessagesEnabled(context) -> if (ko) "(삭제됨)" else "(deleted)"
       record.isMarkedExpired() -> if (ko) "(만료됨)" else "(expired)"
       else -> null
     }

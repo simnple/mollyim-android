@@ -81,6 +81,10 @@ object ReceiptMessageProcessor {
     // Custom fork: we always process received read receipts so that *our* message details show who
     // has read our messages, even when the "read receipts" setting is turned off. (We never *send*
     // read receipts, so others never see us as having read their messages regardless.)
+    if (!TextSecurePreferences.isAsymmetricReadReceiptsEnabled(context) && !TextSecurePreferences.isReadReceiptsEnabled(context)) {
+      log(envelope.clientTimestamp!!, "Ignoring read receipts")
+      return
+    }
     log(envelope.clientTimestamp!!, "Processing read receipts. Sender: $senderRecipientId, Device: ${metadata.sourceDeviceId}, Timestamps: ${readReceipt.timestamp.joinToString(", ")}")
 
     SignalTrace.beginSection("ReceiptMessageProcessor#incrementReadReceiptCounts")

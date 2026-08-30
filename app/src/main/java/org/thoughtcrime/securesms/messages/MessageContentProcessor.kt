@@ -597,7 +597,9 @@ open class MessageContentProcessor(private val context: Context) {
     typingMessage: TypingMessage,
     senderRecipient: Recipient
   ) {
-    if (!TextSecurePreferences.isTypingIndicatorsEnabled(context)) {
+    // Custom fork: "see typing even when typing-off". When the feature is enabled, we still show
+    // others' typing indicators even if our own typing-indicators setting is off.
+    if (!TextSecurePreferences.isSeeTypingEnabled(context) && !TextSecurePreferences.isTypingIndicatorsEnabled(context)) {
       return
     }
 

@@ -1177,11 +1177,16 @@ public final class ConversationItem extends RelativeLayout implements BindableCo
       // Custom fork: retained delete-for-everyone / admin-deleted / expired messages keep their
       // original content. Render the retained body with a strikethrough (the status label is shown
       // in the footer next to the timestamp) instead of a generic "deleted this message" notice.
-      CharSequence retainedBody = markRetainedBody(messageRecord, conversationMessage.getDisplayBody(getContext()));
+      boolean isExpired = messageRecord.isMarkedExpired();
+      boolean showDeletedNotice = !isExpired && !TextSecurePreferences.isShowDeletedMessagesEnabled(context) &&
+                                  conversationMessage.getDeletedByRecipient() != null;
+      CharSequence body = showDeletedNotice
+                          ? getDeletedMessageText(conversationMessage, hasWallpaper)
+                          : markRetainedBody(messageRecord, conversationMessage.getDisplayBody(getContext()));
       // Only render the body when it has content; captionless media/stickers must not leave an
       // empty text box below the thumbnail (the status is shown in the footer).
-      if (retainedBody.length() > 0) {
-        bodyText.setText(retainedBody);
+      if (body.length() > 0) {
+        bodyText.setText(body);
         bodyText.setVisibility(View.VISIBLE);
       } else {
         bodyText.setText(null);

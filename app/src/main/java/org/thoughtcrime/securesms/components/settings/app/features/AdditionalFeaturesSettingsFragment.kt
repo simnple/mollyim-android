@@ -41,6 +41,9 @@ class AdditionalFeaturesSettingsFragment : ComposeFragment() {
     var echoEnabled by remember { mutableStateOf(TextSecurePreferences.isEchoFeatureEnabled(requireContext())) }
     var showBlockedEnabled by remember { mutableStateOf(TextSecurePreferences.isShowBlockedMessagesEnabled(requireContext())) }
     var massSendEnabled by remember { mutableStateOf(TextSecurePreferences.isMassSendEnabled(requireContext())) }
+    var showDeletedEnabled by remember { mutableStateOf(TextSecurePreferences.isShowDeletedMessagesEnabled(requireContext())) }
+    var asymmetricReadReceiptsEnabled by remember { mutableStateOf(TextSecurePreferences.isAsymmetricReadReceiptsEnabled(requireContext())) }
+    var seeTypingEnabled by remember { mutableStateOf(TextSecurePreferences.isSeeTypingEnabled(requireContext())) }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
       uri?.let {
@@ -54,6 +57,9 @@ class AdditionalFeaturesSettingsFragment : ComposeFragment() {
           echoEnabled = TextSecurePreferences.isEchoFeatureEnabled(context)
           showBlockedEnabled = TextSecurePreferences.isShowBlockedMessagesEnabled(context)
           massSendEnabled = TextSecurePreferences.isMassSendEnabled(context)
+          showDeletedEnabled = TextSecurePreferences.isShowDeletedMessagesEnabled(context)
+          asymmetricReadReceiptsEnabled = TextSecurePreferences.isAsymmetricReadReceiptsEnabled(context)
+          seeTypingEnabled = TextSecurePreferences.isSeeTypingEnabled(context)
         }
       }
     }
@@ -130,6 +136,42 @@ class AdditionalFeaturesSettingsFragment : ComposeFragment() {
               onCheckChanged = { checked ->
                 massSendEnabled = checked
                 TextSecurePreferences.setMassSendEnabled(context, checked)
+              }
+            )
+          }
+
+          item {
+            Rows.ToggleRow(
+              checked = showDeletedEnabled,
+              text = stringResource(R.string.AdditionalFeatures__show_deleted),
+              label = stringResource(R.string.AdditionalFeatures__show_deleted_desc),
+              onCheckChanged = { checked ->
+                showDeletedEnabled = checked
+                TextSecurePreferences.setShowDeletedMessagesEnabled(context, checked)
+              }
+            )
+          }
+
+          item {
+            Rows.ToggleRow(
+              checked = asymmetricReadReceiptsEnabled,
+              text = stringResource(R.string.AdditionalFeatures__asymmetric_read_receipts),
+              label = stringResource(R.string.AdditionalFeatures__asymmetric_read_receipts_desc),
+              onCheckChanged = { checked ->
+                asymmetricReadReceiptsEnabled = checked
+                TextSecurePreferences.setAsymmetricReadReceiptsEnabled(context, checked)
+              }
+            )
+          }
+
+          item {
+            Rows.ToggleRow(
+              checked = seeTypingEnabled,
+              text = stringResource(R.string.AdditionalFeatures__see_typing),
+              label = stringResource(R.string.AdditionalFeatures__see_typing_desc),
+              onCheckChanged = { checked ->
+                seeTypingEnabled = checked
+                TextSecurePreferences.setSeeTypingEnabled(context, checked)
               }
             )
           }
