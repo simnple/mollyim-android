@@ -183,12 +183,26 @@ object DataMessageProcessor {
 
         val nick = senderRecipient.getDisplayName(context)
         val echoBody = "[$nick]: $text".trimEnd()
+
+        // Custom fork: an echoed message should follow the chat's disappearing timer, or the
+        // per-thread force auto-delete override when one is set.
+        val roomSeconds = threadRecipient.expiresInSeconds
+        val overrideSeconds = TextSecurePreferences.getExpiryOverrideSecondsForThread(context, threadId)
+        val effectiveSeconds = if (!TextSecurePreferences.isForceExpiryEnabled(context)) {
+          roomSeconds
+        } else if (overrideSeconds == TextSecurePreferences.EXPIRY_OVERRIDE_UNSET) {
+          roomSeconds
+        } else {
+          overrideSeconds
+        }
+
         val outgoing = OutgoingMessage(
           recipient = threadRecipient,
           body = echoBody,
           attachments = attachments,
           timestamp = System.currentTimeMillis(),
-          quote = quote
+          quote = quote,
+          expiresIn = effectiveSeconds * 1000L
         )
         MessageSender.send(context, outgoing, threadId, MessageSender.SendType.SIGNAL, null, null)
       } catch (t: Throwable) {
